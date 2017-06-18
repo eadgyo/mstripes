@@ -1,4 +1,7 @@
 python-tkinter
-python-pytable
+python-pytables
 python-tktable
 python-matplotlib
+python-basemap
+geos
+gdal
