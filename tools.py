@@ -11,9 +11,13 @@ def load_shp_file():
     if isinstance(file, tuple):
         if len(file) != 0:
             file, _ = os.path.splitext(file[0])
+            return file[0]
+        return ""
     elif file != "":
         file, _ = os.path.splitext(file)
     return file
+
+
 
 
 def get_boundaries(shp):

@@ -12,16 +12,18 @@ class Model:
     def set_last_loaded_shape(self, last_loaded_shape_path):
         self.lastLoadedShapePath = last_loaded_shape_path
 
-        if self.lastLoadedShapePath == "":
-            self.lastLoadedShape = None
-        else:
-            pass
-            # Load shape files
-            #self.lastLoadedShape
-
     # Add the last loaded shape file to the project
-    def add_shape(self):
+    def add_shape(self, pol_info):
         self.addedShapes[self.lastLoadedShapePath] = 1
+
+        # Read pol info
+        for info, shape in pol_info:
+            print(info)
+
+    # Add one entry in the table
+    def add_entry(self, info):
+        pass
+
 
 
 

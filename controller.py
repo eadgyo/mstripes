@@ -2,6 +2,7 @@ import tools
 import matplotlib.pyplot as plt
 from tkinter import messagebox
 from mpl_toolkits.basemap import Basemap
+from mpl_toolkits.basemap.data import *
 
 
 class Controller:
@@ -25,7 +26,6 @@ class Controller:
             messagebox.showerror("File missing", "No loaded file")
             return
 
-        self.model.add_shape()
 
         # Add shape information to the map
         shp = self.view.map.readshapefile(self.model.lastLoadedShapePath, self.model.lastLoadedShapePath,
@@ -33,7 +33,20 @@ class Controller:
         self.view.canvas.show()
 
         # Add shape table information to the table
-        pass
+        res = getattr(self.view.map, self.model.lastLoadedShapePath)
+        res_info = getattr(self.view.map, self.model.lastLoadedShapePath + "_info")
+        pol_info = zip(res_info, res)
 
+        self.model.add_shape(pol_info)
 
+        # Add keys if not in table
+        for info, shape in pol_info:
+            for key in info.keys():
+                if not self.view.table.index(key):
+                    self.view.table.insert_cols(key)
 
+        # Add values if not in table
+        for info, shape in pol_info:
+            for values in info.items():
+                r = self.view.table.index(values[0]).split(',')[0] # get row number
+                
