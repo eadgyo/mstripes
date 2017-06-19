@@ -1,4 +1,4 @@
-from tools import *
+import tools
 import matplotlib.pyplot as plt
 from tkinter import messagebox
 from mpl_toolkits.basemap import Basemap
@@ -16,7 +16,7 @@ class Controller:
     def load_action(self):
         print("Load")
 
-        path_shp = load_shp_file()
+        path_shp = tools.load_shp_file()
         self.model.set_last_loaded_shape(path_shp)
 
     def add_action(self):
@@ -26,18 +26,13 @@ class Controller:
             return
 
         self.model.add_shape()
+
         # Add shape information to the map
-
-        self.view.map.drawcoastlines()
+        shp = self.view.map.readshapefile(self.model.lastLoadedShapePath, self.model.lastLoadedShapePath,
+                                          ax=self.view.ax1)
         self.view.canvas.show()
-        #self.view.map.readshapefile(self.model.lastLoadedShapePath, self.model.lastLoadedShapePath)
 
-
-        #map.readshapefile(self.model.lastLoadedShapePath, self.model.lastLoadedShapePath)
-
-        #self.view.canvas.show()
-
-    # Add shape table information to the table
+        # Add shape table information to the table
         pass
 
 

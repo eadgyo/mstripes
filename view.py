@@ -40,9 +40,8 @@ class View:
         center_part.pack(side=Tk.LEFT)
 
         fig = Figure()
-        ax1 = fig.add_subplot(111)
-        self.map = map = Basemap(llcrnrlon=-0.5,llcrnrlat=39.8,urcrnrlon=4.,urcrnrlat=43.,
-                                 resolution='i', projection='tmerc', lat_0=39.5, lon_0=1, ax=ax1)
+        self.ax1 = fig.add_subplot(111)
+        self.map = map = Basemap(ax=self.ax1)
 
         self.canvas = FigureCanvasTkAgg(fig, master=center_part)
         self.canvas.show()
