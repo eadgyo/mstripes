@@ -2,12 +2,8 @@ import tkinter as Tk
 from tkinter import filedialog
 
 from mpl_toolkits.basemap import Basemap
-from constants import *
-from tktable import *
 
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-
+"""
 class App:
 
     def __init__(self, master):
@@ -62,11 +58,17 @@ class App:
 
         self.map = Basemap(llcrnrlon=-0.5,llcrnrlat=39.8,urcrnrlon=4.,urcrnrlat=43.,
                            resolution='i', projection='tmerc', lat_0 = 39.5, lon_0 = 1, ax=self.ax1)
+"""
+from mpl_toolkits.basemap import Basemap
+import matplotlib.pyplot as plt
 
-        self.canvas = FigureCanvasTkAgg(self.fig, master=center_part)
-        self.canvas.show()
-        self.canvas.get_tk_widget().pack(expand=1)
-
+class App:
+    def __init__(self):
+        self.root = Tk.Tk()
+        self.model = Model()
+        self.view = View(self.root)
+        self.controller = Controller(self.view, self.model)
+"""
         # Create the right part
         rightwidth= self.mwidth / 5
         rightheight= self.mheight
@@ -81,12 +83,20 @@ class App:
 
         self.addButton = Tk.Button(right_topframe, text=Constant.ADD_TEXT_BUTTON)
         self.addButton.place(relx=.5, rely=.5, anchor="center")
-
+       
+"""
     def loadShapeFile(self):
         self.filename = filedialog.askopenfilename(filetypes=(("Shape Files","*.shp"),))
+        self.root.mainloop()
 
+    def debug(self):
+        self.model.lastLoadedShapePath = "./try"
+
+    def test(self):
+        plt.figure(0)
+        map = Basemap()
+        map.readshapefile("./try", 'try')
+        plt.show()
 
 if __name__ == '__main__':
-    root = Tk.Tk()
-    app = App(root)
-    root.mainloop()
+    app = App()
