@@ -20,10 +20,9 @@ class View:
         self.addButton = None
 
         # Create part
-        self.create_right_part()
-        self.create_map()
-
         self.create_left_part()
+        self.create_map()
+        self.create_right_part()
 
     def create_left_part(self):
         left_part = Tk.Frame(self.frame)
