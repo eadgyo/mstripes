@@ -4,10 +4,15 @@ import os
 
 
 def load_shp_file():
-    name = filedialog.askopenfilename(initialdir="./", title=Constant.SELECT_SHAPE_TITLE,filetypes=(("shape  "
+    file = filedialog.askopenfilename(initialdir="./", title=Constant.SELECT_SHAPE_TITLE,filetypes=(("shape  "
                                                                                                      "files",
-                                                                                            "*.shx"),                                                                 ("all files","*.*")))
-    file, _ = os.path.splitext(name)
+                                                                                            "*.shx"), ("all files",
+                                                                                                       "*.*")))
+    if isinstance(file, tuple):
+        if len(file) != 0:
+            file, _ = os.path.splitext(file[0])
+    elif file != "":
+        file, _ = os.path.splitext(file)
     return file
 
 
