@@ -54,20 +54,26 @@ class View:
         middleframe.pack_propagate(0)
         middleframe.pack()
 
+        self.label=Tk.Label(middleframe)
+        self.label.pack(side=Tk.TOP)
+
         bottomframe = Tk.Frame(left_part, width=leftwidth, height=3 * leftheight / 5)
         bottomframe.pack_propagate(0)
         bottomframe.pack(padx=10)
 
         # Table
+        hscrollbar = Tk.Scrollbar(bottomframe, orient=Tk.HORIZONTAL)
+        hscrollbar.pack(fill=Tk.X, side=Tk.TOP, expand=Tk.FALSE)
+        vscrollbar = Tk.Scrollbar(bottomframe, orient=Tk.VERTICAL)
+        vscrollbar.pack(fill=Tk.Y, side=Tk.RIGHT, expand=Tk.FALSE)
         self.array = ArrayVar(bottomframe)
-        self.table = Table(bottomframe, rows=0, cols=0, roworigin=-1, colorigin=0, titlerows=1, variable=self.array)
+        self.table = Table(bottomframe, rows=0, cols=0, roworigin=-1, colorigin=0, titlerows=1, variable=self.array, state='normal')
         #self.table.pack(side=Tk.BOTTOM, fill=Tk.BOTH, expand=1)
-
-        s = Tk.Scrollbar(bottomframe, orient='vertical', command=self.table.yview_scroll)
-        self.table.config(yscrollcommand=s.set)
-        s.pack(side='right', fill='y')
-
-        self.table.pack(expand=1, fill='both')
+        self.table.config(yscrollcommand=vscrollbar.set,xscrollcommand=hscrollbar.set)
+        self.table.pack(expand=1, fill=Tk.BOTH)
+        self.table.tag_configure('active', foreground='red')
+        hscrollbar.config(command=self.__xscrollHandler)
+        vscrollbar.config(command=self.__yscrollHandler)
 
     def create_map(self):
         centerwidth = 3 * self.mwidth / 5
@@ -101,3 +107,21 @@ class View:
 
         self.addButton = Tk.Button(right_topframe, text=Constant.ADD_TEXT_BUTTON)
         self.addButton.place(relx=.5, rely=.5, anchor="center")
+
+    def __xscrollHandler(self, *L):
+        op, howMany = L[0], L[1]
+
+        if op == 'scroll':
+            units = L[2]
+            self.table.xview_scroll(howMany, units)
+        elif op == 'moveto':
+            self.table.xview_moveto(howMany)
+
+    def __yscrollHandler(self, *L):
+        op, howMany = L[0], L[1]
+
+        if op == 'scroll':
+            units = L[2]
+            self.table.yview_scroll(howMany, units)
+        elif op == 'moveto':
+            self.table.yview_moveto(howMany)
