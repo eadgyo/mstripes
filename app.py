@@ -11,10 +11,9 @@ from tktable import ArrayVar
 class App:
     def __init__(self):
         self.root = Tk.Tk()
-        array = ArrayVar(self.root)
 
-        self.model = Model(array)
-        self.view = View(self.root, array)
+        self.view = View(self.root)
+        self.model = Model(self.view.array)
         self.controller = Controller(self.view, self.model)
         self.debug()
 

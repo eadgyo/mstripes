@@ -8,7 +8,7 @@ from mpl_toolkits.basemap import Basemap
 
 
 class View:
-    def __init__(self, master, array):
+    def __init__(self, master):
         #variables to store the window dimentions
 
         master.geometry('%dx%d+%d+%d' % (master.winfo_screenwidth(),master.winfo_screenheight(),0,0))
@@ -27,13 +27,14 @@ class View:
         self.map = None
         self.canvas = None
         self.addButton = None
+        self.array = None
 
         # Create part
-        self.create_right_part()
-        self.create_left_part(array)
+        self.create_left_part()
         self.create_map()
+        self.create_right_part()
 
-    def create_left_part(self, array):
+    def create_left_part(self):
         leftwidth= self.mwidth / 5
         leftheight= self.mheight
 
@@ -56,11 +57,17 @@ class View:
         bottomframe = Tk.Frame(left_part, width=leftwidth, height=3 * leftheight / 5)
         bottomframe.pack_propagate(0)
         bottomframe.pack(padx=10)
-        # Table
 
-        Table(variable={})
-        self.table = Table(bottomframe, rows=0, cols=0, roworigin=-1, colorigin=0, titlerows=1, variable=array)
-        self.table.pack(side=Tk.BOTTOM, fill=Tk.BOTH, expand=1)
+        # Table
+        self.array = ArrayVar(bottomframe)
+        self.table = Table(bottomframe, rows=0, cols=0, roworigin=-1, colorigin=0, titlerows=1, variable=self.array)
+        #self.table.pack(side=Tk.BOTTOM, fill=Tk.BOTH, expand=1)
+
+        s = Tk.Scrollbar(bottomframe, orient='vertical', command=self.table.yview_scroll)
+        self.table.config(yscrollcommand=s.set)
+        s.pack(side='right', fill='y')
+
+        self.table.pack(expand=1, fill='both')
 
     def create_map(self):
         centerwidth = 3 * self.mwidth / 5
