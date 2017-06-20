@@ -1,4 +1,5 @@
 import tkinter as Tk
+from tkinter import Tcl
 from constants import *
 from tktable import *
 from matplotlib.figure import Figure
@@ -7,7 +8,7 @@ from mpl_toolkits.basemap import Basemap
 
 
 class View:
-    def __init__(self, master):
+    def __init__(self, master, array):
         #variables to store the window dimentions
 
         master.geometry('%dx%d+%d+%d' % (master.winfo_screenwidth(),master.winfo_screenheight(),0,0))
@@ -28,11 +29,11 @@ class View:
         self.addButton = None
 
         # Create part
-        self.create_left_part()
-        self.create_map()
         self.create_right_part()
+        self.create_left_part(array)
+        self.create_map()
 
-    def create_left_part(self):
+    def create_left_part(self, array):
         leftwidth= self.mwidth / 5
         leftheight= self.mheight
 
@@ -56,7 +57,9 @@ class View:
         bottomframe.pack_propagate(0)
         bottomframe.pack(padx=10)
         # Table
-        self.table = Table(bottomframe, rows=5, cols=5)
+
+        Table(variable={})
+        self.table = Table(bottomframe, rows=0, cols=0, roworigin=-1, colorigin=0, titlerows=1, variable=array)
         self.table.pack(side=Tk.BOTTOM, fill=Tk.BOTH, expand=1)
 
     def create_map(self):

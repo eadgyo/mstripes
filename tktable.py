@@ -423,7 +423,7 @@ class Table(tkinter.Widget):
 
         else:
             args = ()
-            for key, val in kwargs.iteritems():
+            for key, val in kwargs.items():
                 args += ('-%s' % key, val)
 
             self.tk.call(self._w, 'tag', 'configure', tagname, *args)

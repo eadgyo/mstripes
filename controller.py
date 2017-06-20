@@ -9,6 +9,7 @@ class Controller:
     def __init__(self, view, model):
         self.view = view
         self.model = model
+        self.table = self.view.table
 
         # Add command
         self.view.loadButton.configure(command=self.load_action)
@@ -26,27 +27,74 @@ class Controller:
             messagebox.showerror("File missing", "No loaded file")
             return
 
+        self.add_shape_map()
+        self.add_shape_table()
 
-        # Add shape information to the map
-        shp = self.view.map.readshapefile(self.model.lastLoadedShapePath, self.model.lastLoadedShapePath,
+    def add_shape_map(self):
+        # Add shape to the map
+        self.view.map.readshapefile(self.model.lastLoadedShapePath, self.model.lastLoadedShapePath,
                                           ax=self.view.ax1)
         self.view.canvas.show()
+        self.model.add_shape_path()
 
-        # Add shape table information to the table
+    def add_shape_table(self):
+        # Add shape info in the table
+        shape_info = self._get_shape_info()
+        self._update_keys_table(shape_info)
+        shape_info = self._get_shape_info()
+        self._add_values_table(shape_info)
+
+    def _update_keys_table(self, shape_info):
+        # Add key if it does not already exist in table
+        for info, shape in shape_info:
+            for key in info.keys():
+                if not self._key_col_exists(key):
+                    # if array not empty
+                    if len(self.model.array.get()) > 1:
+                        self.table.insert_cols("end", 1)
+                    c = self._get_last_col_index()
+                    self._set_column_title(c, key)
+
+    def _add_values_table(self, shape_info):
+        # Add values from the shape
+        for info, shape in shape_info:
+            self.table.insert_rows("end", 1)
+            row_id = self._get_last_row_index()
+            for value in info.items():
+                col_id = self._get_col_index(value[0])
+                self._set_cell(row_id, col_id, value[1])
+
+    def _get_last_col_index(self):
+        return self.table.index('end').split(',')[1]  # Get column number
+
+    def _get_last_row_index(self):
+        return self.table.index('end').split(',')[0]  # Get row number
+
+    def _get_number_col(self):
+        return self._get_last_col_index() + 1
+
+    def _get_number_row(self):
+        return self._get_last_row_index() + 1
+
+    def _get_col_index(self, col_name):
+        for index, name in self.model.array.get().items():
+            if col_name == name:
+                return int(index.split(',')[1])
+        return -1
+
+    def _get_shape_info(self):
         res = getattr(self.view.map, self.model.lastLoadedShapePath)
         res_info = getattr(self.view.map, self.model.lastLoadedShapePath + "_info")
-        pol_info = zip(res_info, res)
+        return zip(res_info, res)
 
-        self.model.add_shape(pol_info)
+    def _set_cell(self, row, col, value):
+        self.table.set("row", tools.get_index(row, col), *(value,))
 
-        # Add keys if not in table
-        for info, shape in pol_info:
-            for key in info.keys():
-                if not self.view.table.index(key):
-                    self.view.table.insert_cols(key)
+    def _set_column_title(self, col, name):
+        self._set_cell(-1, col, name)
 
-        # Add values if not in table
-        for info, shape in pol_info:
-            for values in info.items():
-                r = self.view.table.index(values[0]).split(',')[0] # get row number
-                
+    def _set_row_title(self, row, name):
+        self._set_cell(row, -1, name)
+
+    def _key_col_exists(self, k):
+        return self._get_col_index(k) != -1
