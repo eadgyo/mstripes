@@ -20,6 +20,7 @@ class Controller:
 
         path_shp = tools.load_shp_file()
         self.model.set_last_loaded_shape(path_shp)
+        self.view.label.config(text=self.model.lastLoadedShapePath)
 
     def add_action(self):
         print("Add " + self.model.lastLoadedShapePath)
@@ -29,6 +30,8 @@ class Controller:
 
         self.add_shape_map()
         self.add_shape_table()
+        self.model.lastLoadedShapePath=""
+        self.view.label.config(text=self.model.lastLoadedShapePath)
 
     def add_shape_map(self):
         # Add shape to the map

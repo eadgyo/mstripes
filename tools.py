@@ -6,7 +6,7 @@ import os
 def load_shp_file():
     file = filedialog.askopenfilename(initialdir="./", title=Constant.SELECT_SHAPE_TITLE,filetypes=(("shape  "
                                                                                                      "files",
-                                                                                            "*.shx"), ("all files",
+                                                                                            "*.shp"), ("all files",
                                                                                                        "*.*")))
     if isinstance(file, tuple):
         if len(file) != 0:
