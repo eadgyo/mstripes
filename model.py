@@ -17,8 +17,8 @@ class Model:
         self.addedShapes[self.lastLoadedShapePath] = 1
 
         # Read pol info
-        for info, shape in pol_info:
-            print(info)
+      #  for info, shape in pol_info:
+       #     print(info)
 
     # Add one entry in the table
     def add_entry(self, info):

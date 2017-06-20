@@ -423,7 +423,7 @@ class Table(tkinter.Widget):
 
         else:
             args = ()
-            for key, val in kwargs.iteritems():
+            for key, val in kwargs.items():
                 args += ('-%s' % key, val)
 
             self.tk.call(self._w, 'tag', 'configure', tagname, *args)
@@ -554,6 +554,7 @@ class Table(tkinter.Widget):
         the display; if it is pages then the view adjusts by number screenfuls.
         If 'number' is negative then cells farther to the left become visible;
         if it is positive then cells farther to the right become visible. """
+        print("here")
         self.tk.call(self._w, 'xview', 'scroll', number, what)
 
 

@@ -1,5 +1,7 @@
 import tools
 import matplotlib.pyplot as plt
+
+from constants import Constant
 from tkinter import messagebox
 from mpl_toolkits.basemap import Basemap
 from mpl_toolkits.basemap.data import *
@@ -13,6 +15,7 @@ class Controller:
         # Add command
         self.view.loadButton.configure(command=self.load_action)
         self.view.addButton.configure(command=self.add_action)
+
 
     def load_action(self):
         print("Load")
@@ -39,14 +42,25 @@ class Controller:
 
         self.model.add_shape(pol_info)
 
+        headings=[]
+
         # Add keys if not in table
         for info, shape in pol_info:
             for key in info.keys():
-                if not self.view.table.index(key):
-                    self.view.table.insert_cols(key)
+                print(key)
+                flag = 0
+                for it in headings:
+                    if it==key:
+                        flag=1
+                        break
+                if flag==0:
+                    self.view.table.insert_cols(len(headings)+1,1)
+                    self.view.table.set("@"+str(len(headings))+",0",str(key))
+                    headings.append(key)
+                    print(headings)
 
         # Add values if not in table
-        for info, shape in pol_info:
-            for values in info.items():
-                r = self.view.table.index(values[0]).split(',')[0] # get row number
-                
+        # for info, shape in pol_info:
+        #     for values in info.items():
+        #         r = self.view.table.index(values[0]).split(',')[0] # get row number
+        #

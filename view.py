@@ -1,4 +1,5 @@
 import tkinter as Tk
+
 from constants import *
 from tktable import *
 from matplotlib.figure import Figure
@@ -40,6 +41,7 @@ class View:
         left_part.pack_propagate(0)
         left_part.pack(side=Tk.LEFT)
 
+
         # Dividing left frame in three parts
         topframe = Tk.Frame(left_part, width=leftwidth, height=leftheight/5)
         topframe.pack_propagate(0)
@@ -56,8 +58,17 @@ class View:
         bottomframe.pack_propagate(0)
         bottomframe.pack(padx=10)
         # Table
-        self.table = Table(bottomframe, rows=5, cols=5)
+        hscrollbar = Tk.Scrollbar(bottomframe, orient=Tk.HORIZONTAL)
+        hscrollbar.pack(fill=Tk.X, side=Tk.TOP, expand=Tk.FALSE)
+        vscrollbar=Tk.Scrollbar(bottomframe,orient=Tk.VERTICAL)
+        vscrollbar.pack(fill=Tk.Y, side=Tk.RIGHT, expand=Tk.FALSE)
+        self.table = Table(bottomframe, rows=35, cols=1,foreground="black",variable=Constant.TABLE,xscrollcommand=hscrollbar.set,yscrollcommand=vscrollbar.set)
+        self.table.tag_configure('active', foreground='black')
         self.table.pack(side=Tk.BOTTOM, fill=Tk.BOTH, expand=1)
+        hscrollbar.config(command=self.__xscrollHandler)
+        vscrollbar.config(command=self.__yscrollHandler)
+
+
 
     def create_map(self):
         centerwidth = 3 * self.mwidth / 5
@@ -91,3 +102,21 @@ class View:
 
         self.addButton = Tk.Button(right_topframe, text=Constant.ADD_TEXT_BUTTON)
         self.addButton.place(relx=.5, rely=.5, anchor="center")
+
+    def __xscrollHandler(self, *L):
+        op, howMany = L[0], L[1]
+
+        if op == 'scroll':
+            units = L[2]
+            self.table.xview_scroll(howMany, units)
+        elif op == 'moveto':
+            self.table.xview_moveto(howMany)
+
+    def __yscrollHandler(self, *L):
+        op, howMany = L[0], L[1]
+
+        if op == 'scroll':
+            units = L[2]
+            self.table.yview_scroll(howMany, units)
+        elif op == 'moveto':
+            self.table.yview_moveto(howMany)
