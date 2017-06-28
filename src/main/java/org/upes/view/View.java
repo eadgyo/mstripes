@@ -38,9 +38,11 @@ public class View extends JFrame
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         this.setLayout(new BorderLayout());
+        this.setExtendedState(JFrame.MAXIMIZED_BOTH);
 
         // Left part
         JPanel buttonsPanel = new JPanel();
+        buttonsPanel.setLayout(new FlowLayout(FlowLayout.CENTER,12,90));
         buttonsPanel.add(loadButton);
         leftPart.add(buttonsPanel, BorderLayout.NORTH);
         leftPart.add(scrollTable, BorderLayout.SOUTH);

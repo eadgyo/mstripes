@@ -1,11 +1,13 @@
 package org.upes.controller;
 
+import org.geotools.io.DefaultFileFilter;
 import org.geotools.swing.data.JFileDataStoreChooser;
 import org.upes.Constants;
 import org.upes.model.Model;
 import org.upes.view.View;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
@@ -35,7 +37,11 @@ public class Controller
         view.layerDialog.okButton.setAction(okAction);
 
         addAction.setEnabled(false);
-
+        for(int i=0;i<view.toolBar.getComponentCount();i++)
+        {
+            if(view.toolBar.getComponentAtIndex(i).getClass().equals(JButton.class))
+                view.toolBar.getComponentAtIndex(i).setEnabled(false);
+        }
         // Link map content
         //view.mapPane.setMapContent(model.getMap());
         view.layerDialog.mapLayerTable.setMapPane(view.mapPane);
@@ -67,8 +73,10 @@ public class Controller
         @Override
         public void actionPerformed(ActionEvent actionEvent)
         {
-            File initialDir = new File("/home/ronan-j/Documents/Basemaps/");
-            File sourceFile = JFileDataStoreChooser.showOpenFile("shp", initialDir, view);
+
+            JFileDataStoreChooser chooser=new JFileDataStoreChooser(".shp");
+            File sourceFile = chooser.showOpenFile(".shp", new File(model.getInitPath()), view);
+
             if (sourceFile == null)
                 return;
 
@@ -83,10 +91,16 @@ public class Controller
                 return;
             }
 
+            model.setInitPath(sourceFile.getParent());
             //this.setEnabled(false);
             addAction.setEnabled(true);
-
+            for(int i=0;i<view.toolBar.getComponentCount();i++)
+            {
+                if(view.toolBar.getComponentAtIndex(i).getClass().equals(JButton.class))
+                    view.toolBar.getComponentAtIndex(i).setEnabled(true);
+            }
             view.mapPane.setMapContent(model.getMap());
+
             view.mapPane.repaint();
         }
     }

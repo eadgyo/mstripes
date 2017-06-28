@@ -1,4 +1,4 @@
-package org.upes;
+package main.java.org.upes;
 
 import com.vividsolutions.jts.geom.Geometry;
 import org.geotools.data.FileDataStore;

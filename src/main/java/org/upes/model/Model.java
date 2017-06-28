@@ -32,6 +32,7 @@ public class Model
     private SimpleFeatureSource featureSource;
     private MapContent          map;
     private MyTableModel tableModel;
+    private String initPath="/";
 
     public Model()
     {
@@ -53,6 +54,17 @@ public class Model
         // Load the dbf file
         loadDbf();
 
+    }
+
+    public String getInitPath()
+    {
+        return initPath;
+    }
+
+    public void setInitPath(String path)
+    {
+        if(!path.isEmpty())
+        initPath=path;
     }
 
     public void loadMap()
