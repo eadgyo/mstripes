@@ -1,9 +1,8 @@
 package org.upes.controller;
 
-import org.geotools.io.DefaultFileFilter;
-import org.geotools.swing.data.JFileDataStoreChooser;
 import org.upes.Constants;
 import org.upes.model.Model;
+import org.upes.view.MapPanel;
 import org.upes.view.View;
 
 import javax.swing.*;
@@ -20,8 +19,9 @@ import java.util.Arrays;
  */
 public class Controller
 {
-    private View view;
-    private Model model;
+    private View     view;
+    private MapPanel mapPanel;
+    private Model    model;
 
     private LoadAction loadAction = new LoadAction();
     private AddAction addAction = new AddAction();
@@ -30,25 +30,26 @@ public class Controller
     public Controller(View view, Model model)
     {
         this.view = view;
+        this.mapPanel = view.mapPanel;
         this.model = model;
 
         // Set actions
-        view.loadButton.setAction(loadAction);
-        view.addButton.setAction(addAction);
+        mapPanel.loadButton.setAction(loadAction);
+        mapPanel.addButton.setAction(addAction);
         view.layerDialog.okButton.setAction(okAction);
 
         addAction.setEnabled(false);
-        for(int i=0;i<view.toolBar.getComponentCount();i++)
+        for(int i=0; i< mapPanel.toolBar.getComponentCount();i++)
         {
-            if(view.toolBar.getComponentAtIndex(i).getClass().equals(JButton.class))
-                view.toolBar.getComponentAtIndex(i).setEnabled(false);
+            if(mapPanel.toolBar.getComponentAtIndex(i).getClass().equals(JButton.class))
+                mapPanel.toolBar.getComponentAtIndex(i).setEnabled(false);
         }
         // Link map content
-        //view.mapPane.setMapContent(model.getMap());
-        view.layerDialog.mapLayerTable.setMapPane(view.mapPane);
+        mapPanel.mapPane.setMapContent(model.getMap());
+        view.layerDialog.mapLayerTable.setMapPane(view.mapPanel.mapPane);
 
         // Link Table
-        view.table.setModel(model.getTableModel());
+        view.mapPanel.table.setModel(model.getTableModel());
     }
 
     private class AddAction extends AbstractAction {
@@ -61,8 +62,6 @@ public class Controller
         @Override
         public void actionPerformed(ActionEvent actionEvent)
         {
-//            view.layerDialog.setVisible(true);
-
             JFileChooser chooser=new JFileChooser(model.getInitPath());
             FileFilter filter = new FileNameExtensionFilter("ESRI Shapefile(*.shp)","shp");
             chooser.setFileFilter(filter);
@@ -84,8 +83,8 @@ public class Controller
             }
 
             model.setInitPath(sourceFile.getParent());
-            view.mapPane.setMapContent(model.getMap());
-            view.mapPane.repaint();
+            mapPanel.mapPane.setMapContent(model.getMap());
+            mapPanel.mapPane.repaint();
 
         }
     }
@@ -99,8 +98,6 @@ public class Controller
         @Override
         public void actionPerformed(ActionEvent actionEvent)
         {
-
-
             JFileChooser chooser=new JFileChooser(model.getInitPath());
             FileFilter filter = new FileNameExtensionFilter("ESRI Shapefile(*.shp)","shp");
             chooser.setFileFilter(filter);
@@ -125,14 +122,14 @@ public class Controller
             //this.setEnabled(false);
             addAction.setEnabled(true);
             loadAction.setEnabled(false);
-            for(int i=0;i<view.toolBar.getComponentCount();i++)
+            for(int i=0;i<mapPanel.toolBar.getComponentCount();i++)
             {
-                if(view.toolBar.getComponentAtIndex(i).getClass().equals(JButton.class))
-                    view.toolBar.getComponentAtIndex(i).setEnabled(true);
+                if(mapPanel.toolBar.getComponentAtIndex(i).getClass().equals(JButton.class))
+                    mapPanel.toolBar.getComponentAtIndex(i).setEnabled(true);
             }
-            view.mapPane.setMapContent(model.getMap());
+            mapPanel.mapPane.setMapContent(model.getMap());
 
-            view.mapPane.repaint();
+            mapPanel.mapPane.repaint();
         }
     }
 

@@ -24,11 +24,7 @@ public class Application
         model = new Model();
         controller = new Controller(view, model);
 
-        view.pack();
-        view.layerDialog.pack();
-        view.setLocationRelativeTo(null);
-        view.layerDialog.setLocationRelativeTo(null);
-        view.setVisible(true);
+        launchApp();
     }
 
     public static void main(String[] args)
@@ -36,4 +32,19 @@ public class Application
         // Start application
         new Application();
     }
+
+    private void launchApp()
+    {
+        view.startLoading();
+        try
+        {
+            Thread.sleep(1000);
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
+        view.swapCard();
+    }
+
 }
