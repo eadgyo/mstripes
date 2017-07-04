@@ -8,6 +8,7 @@ import org.upes.view.View;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
@@ -60,7 +61,32 @@ public class Controller
         @Override
         public void actionPerformed(ActionEvent actionEvent)
         {
-            view.layerDialog.setVisible(true);
+//            view.layerDialog.setVisible(true);
+
+            JFileChooser chooser=new JFileChooser(model.getInitPath());
+            FileFilter filter = new FileNameExtensionFilter("ESRI Shapefile(*.shp)","shp");
+            chooser.setFileFilter(filter);
+            chooser.showOpenDialog(view);
+            File sourceFile=chooser.getSelectedFile();
+
+            if (sourceFile == null)
+                return;
+
+            try
+            {
+                model.loadFile(sourceFile);
+            }
+            catch (IOException e)
+            {
+                JOptionPane.showMessageDialog(view, Constants.TITLE_NOT_VALID_SHP, Arrays.toString(e.getStackTrace()),
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            model.setInitPath(sourceFile.getParent());
+            view.mapPane.setMapContent(model.getMap());
+            view.mapPane.repaint();
+
         }
     }
 
@@ -74,8 +100,12 @@ public class Controller
         public void actionPerformed(ActionEvent actionEvent)
         {
 
-            JFileDataStoreChooser chooser=new JFileDataStoreChooser(".shp");
-            File sourceFile = chooser.showOpenFile(".shp", new File(model.getInitPath()), view);
+
+            JFileChooser chooser=new JFileChooser(model.getInitPath());
+            FileFilter filter = new FileNameExtensionFilter("ESRI Shapefile(*.shp)","shp");
+            chooser.setFileFilter(filter);
+            chooser.showOpenDialog(view);
+            File sourceFile=chooser.getSelectedFile();
 
             if (sourceFile == null)
                 return;
@@ -94,6 +124,7 @@ public class Controller
             model.setInitPath(sourceFile.getParent());
             //this.setEnabled(false);
             addAction.setEnabled(true);
+            loadAction.setEnabled(false);
             for(int i=0;i<view.toolBar.getComponentCount();i++)
             {
                 if(view.toolBar.getComponentAtIndex(i).getClass().equals(JButton.class))

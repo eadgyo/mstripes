@@ -17,6 +17,7 @@ import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.PropertyType;
+import org.upes.view.View;
 
 import javax.swing.table.TableModel;
 import java.io.File;
@@ -31,7 +32,7 @@ public class Model
     private File                sourceFile;
     private SimpleFeatureSource featureSource;
     private MapContent          map;
-    private MyTableModel tableModel;
+    private MyTableModel        tableModel;
     private String initPath="/";
 
     public Model()
@@ -67,31 +68,29 @@ public class Model
         initPath=path;
     }
 
-    public void loadMap()
-    {
+    public void loadMap() {
         Style style = SLD.createSimpleStyle(featureSource.getSchema());
-        try
-        {
-            SimpleFeatureIterator features = featureSource.getFeatures().features();
-
-            while (features.hasNext())
-            {
-                SimpleFeature next = features.next();
+        SimpleFeatureIterator features = null;
+        try {
+            features = featureSource.getFeatures().features();
+            DefaultFeatureCollection featureColl = new DefaultFeatureCollection();
+            SimpleFeature next = null;
+            while (features.hasNext()) {
+                next = features.next();
                 Geometry geometry = (Geometry) next.getDefaultGeometry();
-                if (geometry != null && geometry.isValid())
-                {
-                    DefaultFeatureCollection featureColl = new DefaultFeatureCollection();
+                if (geometry != null && geometry.isValid()) {
+
                     featureColl.add(next);
 
-                    Layer layer = new FeatureLayer(featureColl, style, next.getName().toString());
-                    map.layers().add(layer);
                 }
             }
+            Layer layer = new FeatureLayer(featureColl, style, next.getName().toString());
+            map.layers().add(layer);
 
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            features.close();
         }
     }
 

@@ -22,7 +22,7 @@ public class LayerDialog extends JDialog
         mapLayerTable.setMinimumSize(Constants.MIN_LAYERS_DIMENSION_SIZE);
         panel.add(mapLayerTable);
         panel.add(okButton);
-
+        
         add(panel);
     }
 }
