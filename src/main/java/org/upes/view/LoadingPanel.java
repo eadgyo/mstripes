@@ -18,7 +18,7 @@ public class LoadingPanel extends JPanel
     {
         try
         {
-            File file = new File("upes.png");
+            File file = new File("wiilogo.gif");
             loadingImage = ImageIO.read(file);
         }
         catch (IOException e)
