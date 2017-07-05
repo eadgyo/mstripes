@@ -13,6 +13,7 @@ public class View extends JFrame
     public LayerDialog layerDialog = new LayerDialog(this);
     public CardLayout  card        = new CardLayout();
 
+    public JPanel mainPanel          = new JPanel();
     public MapPanel     mapPanel     = new MapPanel();
     public LoadingPanel loadingPanel = new LoadingPanel();
 
@@ -26,24 +27,20 @@ public class View extends JFrame
         this.setExtendedState(JFrame.MAXIMIZED_BOTH);
 
         // Add switched panel to card
-        setLayout(card);
-        this.add("a", loadingPanel);
-        this.add("b", mapPanel);
+        this.add(mainPanel);
+        mainPanel.setLayout(card);
+        mainPanel.add("a", loadingPanel);
+        mainPanel.add("b", mapPanel);
     }
 
 
     public void swapCard()
     {
-        card.next(this.getContentPane());
-
+        card.next(mainPanel);
     }
 
     public void startLoading()
     {
-        this.mapPanel.leftPart.validate();
-        this.mapPanel.middlePart.validate();
-        this.mapPanel.rightPart.validate();
-        this.mapPanel.validate();
         this.validate();
         this.pack();
 

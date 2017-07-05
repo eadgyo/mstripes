@@ -41,6 +41,7 @@ public class MapPanel extends JPanel
         leftPart.add(buttonsPanel, BorderLayout.NORTH);
         leftPart.add(scrollTable, BorderLayout.SOUTH);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+
         // Center part
         toolSet = EnumSet.allOf(JMapFrame.Tool.class);
         toolBar = new JToolBar();
