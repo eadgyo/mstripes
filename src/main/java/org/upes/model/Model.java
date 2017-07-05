@@ -1,6 +1,7 @@
 package org.upes.model;
 
 import com.vividsolutions.jts.geom.Geometry;
+import org.geotools.coverage.grid.io.AbstractGridCoverage2DReader;
 import org.geotools.data.FileDataStore;
 import org.geotools.data.FileDataStoreFinder;
 import org.geotools.data.simple.SimpleFeatureIterator;
@@ -11,18 +12,16 @@ import org.geotools.feature.FeatureIterator;
 import org.geotools.map.FeatureLayer;
 import org.geotools.map.Layer;
 import org.geotools.map.MapContent;
-import org.geotools.styling.SLD;
 import org.geotools.styling.Style;
 import org.geotools.styling.StyleFactory;
+import org.geotools.styling.StyleFactoryImpl;
 import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.PropertyType;
 import org.upes.MyStyleFactory;
-import org.upes.view.View;
 
 import javax.swing.table.TableModel;
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.Vector;
@@ -37,16 +36,16 @@ public class Model
     private MapContent          map;
     private MyTableModel        tableModel;
     private String initPath="/";
-    private MyStyleFactory myStyleFactory;
+    private MyStyleFactory               myStyleFactory;
+    private AbstractGridCoverage2DReader reader;
+    private StyleFactory sf = new StyleFactoryImpl();;
 
     public Model()
     {
         map = new MapContent();
         tableModel = new MyTableModel();
         myStyleFactory=new MyStyleFactory();
-
     }
-
     public void loadFile(File sourceFile) throws IOException
     {
         this.sourceFile = sourceFile;
@@ -106,6 +105,7 @@ public class Model
     {
         FeatureCollection<SimpleFeatureType, SimpleFeature> collection = featureSource.getFeatures();
         try (FeatureIterator<SimpleFeature> features = collection.features()) {
+
             while (features.hasNext())
             {
                 SimpleFeature feature = features.next();
@@ -122,7 +122,7 @@ public class Model
                         vector.set(columnRow, attribute.getValue());
                     }
                 }
-                tableModel.addRow(vector);
+                tableModel.addRow(feature.getName().toString(), vector);
             }
         }
     }
