@@ -2,6 +2,7 @@ package org.upes.controller;
 
 import org.upes.Constants;
 import org.upes.model.Model;
+import org.upes.view.LayerDialog;
 import org.upes.view.MapPanel;
 import org.upes.view.View;
 
@@ -26,6 +27,7 @@ public class Controller
     private LoadAction loadAction = new LoadAction();
     private AddAction addAction = new AddAction();
     private OkAction okAction = new OkAction();
+    private  DeleteAction deleteAction= new DeleteAction();
 
     public Controller(View view, Model model)
     {
@@ -37,8 +39,11 @@ public class Controller
         mapPanel.loadButton.setAction(loadAction);
         mapPanel.addButton.setAction(addAction);
         view.layerDialog.okButton.setAction(okAction);
+        mapPanel.deleteButton.setAction(deleteAction);
 
         addAction.setEnabled(false);
+        deleteAction.setEnabled(false);
+
         for(int i=0; i< mapPanel.toolBar.getComponentCount();i++)
         {
             if(mapPanel.toolBar.getComponentAtIndex(i).getClass().equals(JButton.class))
@@ -119,8 +124,8 @@ public class Controller
             }
 
             model.setInitPath(sourceFile.getParent());
-            //this.setEnabled(false);
             addAction.setEnabled(true);
+            deleteAction.setEnabled(true);
             loadAction.setEnabled(false);
             for(int i=0;i<mapPanel.toolBar.getComponentCount();i++)
             {
@@ -140,7 +145,34 @@ public class Controller
         @Override
         public void actionPerformed(ActionEvent actionEvent)
         {
+            int layerCount=view.mapPanel.mapPane.getMapContent().layers().size();
+            if (layerCount==0)
+            {
+                loadAction.setEnabled(true);
+                addAction.setEnabled(false);
+                for(int i=0;i<mapPanel.toolBar.getComponentCount();i++)
+                {
+                    if(mapPanel.toolBar.getComponentAtIndex(i).getClass().equals(JButton.class))
+                        mapPanel.toolBar.getComponentAtIndex(i).setEnabled(false);
+                }
+                deleteAction.setEnabled(false);
+            }
             view.layerDialog.setVisible(false);
+        }
+    }
+
+    private  class DeleteAction extends AbstractAction
+    {
+        public DeleteAction() {
+            super(Constants.NAME_DEL_MAP);
+            this.putValue(SHORT_DESCRIPTION, Constants.DESC_DEL_MAP);
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+
+            view.layerDialog.setVisible(true);
+
         }
     }
 }

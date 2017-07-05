@@ -16,8 +16,8 @@ public interface Constants
     String NAME_ADD_MAP = "Add";
     String DESC_ADD_MAP = "Add details to the map";
 
-    String NAME_DEL_MAP="Delete";
-    String DESC_DEL_MAP="Delete layers from map";
+    String NAME_DEL_MAP="Customize";
+    String DESC_DEL_MAP="Customize layers from map";
 
     String NAME_OK_DIALOG = "OK";
 
