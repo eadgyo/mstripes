@@ -62,7 +62,7 @@ public class MyTableModel extends DefaultTableModel
 
     public void addRow(String name, Vector vector)
     {
-        LayerEntry layerEntry = getLayerEntry(name.toString());
+        LayerEntry layerEntry = getLayerEntry(name);
 
         if (layerEntry == null)
         {

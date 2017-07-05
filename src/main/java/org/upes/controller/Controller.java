@@ -128,7 +128,6 @@ public class Controller
                     mapPanel.toolBar.getComponentAtIndex(i).setEnabled(true);
             }
             mapPanel.mapPane.setMapContent(model.getMap());
-
             mapPanel.mapPane.repaint();
         }
     }
