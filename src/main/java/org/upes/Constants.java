@@ -31,6 +31,12 @@ public interface Constants
 
     Dimension MIN_MAP_DIMENSION_SIZE = new Dimension(400, 300);
 
+    // Image locations
+    String IMAGE_UPES_PATH = "upes.png";
+    String IMAGE_WILDLIFE_PATH = "wiilogo.gif";
+    int WILDLIFE_PADDING = 80;
+    int UPES_PADDING = 40;
+
     // are indicies for style factory
     int BEAT =0;
     int BEAT_I1=1;
