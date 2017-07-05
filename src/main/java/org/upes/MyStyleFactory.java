@@ -37,7 +37,7 @@ public class MyStyleFactory {
        polygonLayers.add(new PolygonLayer(Color.BLACK,Color.magenta,0.2f));
 
        //FOREST_ROAD
-       lineLayers.add(new LineLayer(Color.BLACK,1f));
+       lineLayers.add(new LineLayer(Color.WHITE,1f));
 
        //GRID
        polygonLayers.add(new PolygonLayer(Color.BLACK,Color.WHITE,0.1f));

@@ -17,7 +17,7 @@ public class MapPanel extends JPanel
 {
     public JPanel leftPart = new JPanel(new BorderLayout());
     public JPanel middlePart = new JPanel(new BorderLayout());
-    public JPanel rightPart = new JPanel(new FlowLayout());
+    public JPanel rightPart = new JPanel();
 
     public JButton loadButton = new JButton();
     public JButton addButton = new JButton();
@@ -51,10 +51,14 @@ public class MapPanel extends JPanel
         middlePart.setMinimumSize(Constants.MIN_MAP_DIMENSION_SIZE);
 
         JSplitPane jSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPart, middlePart);
-
+        rightPart.setLayout(new BoxLayout(rightPart,BoxLayout.Y_AXIS));
         // Right part
-        rightPart.add(addButton);
+        rightPart.add(Box.createRigidArea(new Dimension(0,10)));
+        deleteButton.setAlignmentX(Box.CENTER_ALIGNMENT);
         rightPart.add(deleteButton);
+        rightPart.add(Box.createRigidArea(new Dimension(0,10)));
+        addButton.setAlignmentX(Box.CENTER_ALIGNMENT);
+        rightPart.add(addButton);
 
         this.add(jSplitPane, BorderLayout.CENTER);
         this.add(rightPart, BorderLayout.EAST);
