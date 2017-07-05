@@ -27,4 +27,17 @@ public interface Constants
     Dimension MIN_LAYERS_DIMENSION_SIZE = new Dimension(400, 300);
 
     Dimension MIN_MAP_DIMENSION_SIZE = new Dimension(400, 300);
+
+    // are indicies for style factory
+    int BEAT =0;
+    int BEAT_I1=1;
+    int BOUNDARY=2;
+    int DIVISION=3;
+    int FOREST_ROAD=0;
+    int GRID=4;
+    int PATROLLING_CAMP=0;
+    int RANGE=5;
+    int STATE=6;
+    int WIRELESS_STATION=1;
+
 }

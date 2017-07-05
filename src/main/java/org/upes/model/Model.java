@@ -13,13 +13,16 @@ import org.geotools.map.Layer;
 import org.geotools.map.MapContent;
 import org.geotools.styling.SLD;
 import org.geotools.styling.Style;
+import org.geotools.styling.StyleFactory;
 import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.PropertyType;
+import org.upes.MyStyleFactory;
 import org.upes.view.View;
 
 import javax.swing.table.TableModel;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.Vector;
@@ -34,11 +37,14 @@ public class Model
     private MapContent          map;
     private MyTableModel        tableModel;
     private String initPath="/";
+    private MyStyleFactory myStyleFactory;
 
     public Model()
     {
         map = new MapContent();
         tableModel = new MyTableModel();
+        myStyleFactory=new MyStyleFactory();
+
     }
 
     public void loadFile(File sourceFile) throws IOException
@@ -69,7 +75,9 @@ public class Model
     }
 
     public void loadMap() {
-        Style style = SLD.createSimpleStyle(featureSource.getSchema());
+
+        Style style=myStyleFactory.setStyle(featureSource.getSchema());
+
         SimpleFeatureIterator features = null;
         try {
             features = featureSource.getFeatures().features();
