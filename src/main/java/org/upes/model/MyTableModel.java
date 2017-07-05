@@ -69,15 +69,14 @@ public class MyTableModel extends DefaultTableModel
             layerEntry = new LayerEntry();
             layerEntry.layerName = name;
             layerToMap.add(layerEntry);
-            return;
+            layerEntry.startIndex = this.getRowCount();
         }
 
-        layerEntry.startIndex = this.getRowCount();
         addRow(vector);
         layerEntry.endIndex = this.getRowCount();
     }
 
-    public LayerEntry removeLayerEntry(String name)
+    private LayerEntry removeLayerEntry(String name)
     {
         Iterator<LayerEntry> iterator = layerToMap.iterator();
         while (iterator.hasNext())

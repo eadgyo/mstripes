@@ -1,8 +1,8 @@
 package org.upes.controller;
 
+import org.geotools.map.Layer;
 import org.upes.Constants;
 import org.upes.model.Model;
-import org.upes.view.LayerDialog;
 import org.upes.view.MapPanel;
 import org.upes.view.View;
 
@@ -12,7 +12,9 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 
 /**
@@ -133,6 +135,7 @@ public class Controller
                     mapPanel.toolBar.getComponentAtIndex(i).setEnabled(true);
             }
             mapPanel.mapPane.setMapContent(model.getMap());
+
             mapPanel.mapPane.repaint();
         }
     }
@@ -168,11 +171,24 @@ public class Controller
             this.putValue(SHORT_DESCRIPTION, Constants.DESC_DEL_MAP);
         }
 
+
         @Override
         public void actionPerformed(ActionEvent e) {
+            List<Layer> oldLayers = new ArrayList<>(model.getMap().layers());
+
 
             view.layerDialog.setVisible(true);
 
+            // Get all removed layers
+
+            List<Layer> layers = model.getMap().layers();
+            for (Layer oldLayer : oldLayers)
+            {
+                if (!layers.contains(oldLayer))
+                {
+                    model.removeLayer(oldLayer.getTitle());
+                }
+            }
         }
     }
 }

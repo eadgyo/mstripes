@@ -144,4 +144,9 @@ public class Model
     {
         return tableModel;
     }
+
+    public void removeLayer(String layerName)
+    {
+        tableModel.removeLayer(layerName);
+    }
 }
