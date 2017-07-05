@@ -1,5 +1,7 @@
 package org.upes.view;
 
+import org.upes.Constants;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
@@ -12,7 +14,8 @@ import java.net.URL;
  */
 public class LoadingPanel extends JPanel
 {
-    BufferedImage loadingImage;
+    private BufferedImage upesImage;
+    private BufferedImage wildLifeImage;
 
     public static BufferedImage getImage(final String pathAndFileName) throws IOException
     {
@@ -26,9 +29,11 @@ public class LoadingPanel extends JPanel
 
     public LoadingPanel()
     {
+        super();
         try
         {
-            loadingImage = getImage("upes.png");
+            upesImage = getImage(Constants.IMAGE_UPES_PATH);
+            wildLifeImage = getImage(Constants.IMAGE_WILDLIFE_PATH);
         }
         catch (IOException e)
         {
@@ -44,9 +49,14 @@ public class LoadingPanel extends JPanel
 
         // Compute location to display image in center of screen
         Rectangle clipBounds = graphics.getClipBounds();
-        int xImage = (int) (clipBounds.getWidth()/2 - loadingImage.getWidth()/2);
-        int yImage = (int) (clipBounds.getHeight()/2 - loadingImage.getHeight()/2);
+        int xImage = (int) (clipBounds.getWidth()/2 - wildLifeImage.getWidth()/2);
+        int yImage = (int) (clipBounds.getHeight()/2 - wildLifeImage.getHeight() - Constants.WILDLIFE_PADDING);
 
-        graphics.drawImage(loadingImage, xImage, yImage, this);
+        graphics.drawImage(wildLifeImage, xImage, yImage, this);
+
+        xImage = (int) (clipBounds.getWidth()/2 - upesImage.getWidth()/2);
+        yImage = (int) (clipBounds.getHeight()/2 + Constants.UPES_PADDING);
+
+        graphics.drawImage(upesImage, xImage, yImage, this);
     }
 }
