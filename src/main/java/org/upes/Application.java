@@ -20,6 +20,7 @@ public class Application
 
     public Application()
     {
+
         view = new View();
         model = new Model();
         controller = new Controller(view, model);
