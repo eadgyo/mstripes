@@ -18,7 +18,6 @@ import org.geotools.styling.SLD;
 import org.geotools.styling.Style;
 import org.geotools.styling.StyleFactory;
 import org.geotools.styling.StyleFactoryImpl;
-import org.opengis.feature.Feature;
 import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
@@ -41,7 +40,7 @@ public class Model
     private SimpleFeatureSource featureSource;
     private MapContent          map;
     private MyTableModel        tableModel;
-    private String initPath="/";
+    private String initPath= "/";
     private MyStyleFactory               myStyleFactory;
     private AbstractGridCoverage2DReader reader;
     private StyleFactory sf = new StyleFactoryImpl();
@@ -202,8 +201,9 @@ public class Model
                 SimpleFeatureIterator simpleFeatureIterator=null;
                 try {
                     simpleFeatureIterator= (SimpleFeatureIterator) beatLayer.getFeatureSource().getFeatures().features();
-                    DefaultFeatureCollection fcollect=new DefaultFeatureCollection();
 
+                    DefaultFeatureCollection fcollect=new DefaultFeatureCollection();
+//                    System.out.println("here");
                     while (simpleFeatureIterator.hasNext())
                     {
                         SimpleFeature next=simpleFeatureIterator.next();
@@ -215,17 +215,18 @@ public class Model
                             SimpleFeature lineFeature=linefeatures.next();
                             Geometry lineGeometry=(Geometry) lineFeature.getDefaultGeometry();
 
-                            if (beatGeometry.intersects(lineGeometry))
+                            if (lineGeometry.intersects(beatGeometry))
                             {
                                 System.out.println("here");
                                 Style st= SLD.createLineStyle(Color.ORANGE,3);
-                                SimpleFeature f= (SimpleFeature) beatGeometry.intersection(lineGeometry);
+                                SimpleFeature f= (SimpleFeature) lineGeometry.intersection(beatGeometry);
                                 fcollect.add(f);
                                 Layer newLayer=new FeatureLayer(fcollect,st,"new layer");
                                 map.layers().add(newLayer);
                                 return;
                             }
                         }
+                        linefeatures.close();
 
                     }
                 } catch (IOException e) {
