@@ -3,6 +3,7 @@ package org.upes.model;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import org.geotools.coverage.grid.io.AbstractGridCoverage2DReader;
+import org.geotools.data.DataUtilities;
 import org.geotools.data.FeatureSource;
 import org.geotools.data.FileDataStore;
 import org.geotools.data.FileDataStoreFinder;
@@ -11,6 +12,7 @@ import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
+import org.geotools.feature.SchemaException;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.filter.AreaFunction;
 import org.geotools.geometry.jts.JTS;
@@ -207,11 +209,11 @@ public class Model
             {
                 SimpleFeatureIterator linefeatures=null;
                 SimpleFeatureIterator simpleFeatureIterator=null;
+                DefaultFeatureCollection fcollect=new DefaultFeatureCollection();
+                Layer newLayer=null;
                 try {
                     simpleFeatureIterator= (SimpleFeatureIterator) beatLayer.getFeatureSource().getFeatures().features();
-
-                    DefaultFeatureCollection fcollect=new DefaultFeatureCollection();
-//                    System.out.println("here");
+                    int innerFlag=0;
                     while (simpleFeatureIterator.hasNext())
                     {
                         SimpleFeature next=simpleFeatureIterator.next();
@@ -233,18 +235,20 @@ public class Model
 
                             if (beatGeometry.intersects(lineGeometry))
                             {
-                                System.out.println("here");
-                                Style st= SLD.createLineStyle(Color.ORANGE,3);
+                                SimpleFeatureType TYPE = DataUtilities.createType("test", "line", "the_geom:MultiLineString");
+                                SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder((SimpleFeatureType) TYPE);
+                                featureBuilder.add(lineGeometry.intersection(beatGeometry));
+                                SimpleFeature feature = featureBuilder.buildFeature("LineString_Sample");
 
-                                lineGeometry.intersection(beatGeometry);
+                                fcollect.add(feature);
 
-                                //fcollect.add();
-                                Layer newLayer=new FeatureLayer(fcollect,st,"newLayer");
-                                map.layers().add(newLayer);
-                                return;
+                                innerFlag=1;
+                                break;
                             }
                         }
                         linefeatures.close();
+                        if (innerFlag==1)
+                        {break;}
 
                     }
                 } catch (IOException e) {
@@ -253,10 +257,16 @@ public class Model
                     e.printStackTrace();
                 } catch (TransformException e) {
                     e.printStackTrace();
+                } catch (SchemaException e) {
+                    e.printStackTrace();
                 } finally {
                     simpleFeatureIterator.close();
                     linefeatures.close();
                 }
+
+                Style st= SLD.createLineStyle(Color.ORANGE,3);
+                newLayer=new FeatureLayer(fcollect,st,"newLayer");
+                map.layers().add(newLayer);
         }
 
     }
