@@ -39,7 +39,7 @@ public class Application
         view.startLoading();
         try
         {
-            Thread.sleep(1000);
+            Thread.sleep(Constants.TIME_LOADING);
         }
         catch (InterruptedException e)
         {

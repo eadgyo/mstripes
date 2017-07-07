@@ -7,6 +7,8 @@ import java.awt.*;
  */
 public interface Constants
 {
+    int TIME_LOADING = 0;
+
     String MAIN_WINDOW_TILE = "mstripes";
     String ADD_LAYER_DIALOG_TITLE = "Add layer";
 
