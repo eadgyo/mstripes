@@ -1,6 +1,7 @@
 package org.upes.model;
 
 import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryFactory;
 import org.geotools.coverage.grid.io.AbstractGridCoverage2DReader;
 import org.geotools.data.FeatureSource;
 import org.geotools.data.FileDataStore;
@@ -10,10 +11,13 @@ import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
+import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.filter.AreaFunction;
+import org.geotools.geometry.jts.JTS;
 import org.geotools.map.FeatureLayer;
 import org.geotools.map.Layer;
 import org.geotools.map.MapContent;
+import org.geotools.referencing.CRS;
 import org.geotools.styling.SLD;
 import org.geotools.styling.Style;
 import org.geotools.styling.StyleFactory;
@@ -22,6 +26,10 @@ import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.PropertyType;
+import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.opengis.referencing.operation.MathTransform;
+import org.opengis.referencing.operation.TransformException;
 import org.upes.MyStyleFactory;
 
 import javax.swing.table.TableModel;
@@ -40,7 +48,7 @@ public class Model
     private SimpleFeatureSource featureSource;
     private MapContent          map;
     private MyTableModel        tableModel;
-    private String initPath= "/";
+    private String initPath= "F:/intern/Basemaps";
     private MyStyleFactory               myStyleFactory;
     private AbstractGridCoverage2DReader reader;
     private StyleFactory sf = new StyleFactoryImpl();
@@ -210,18 +218,27 @@ public class Model
                         Geometry beatGeometry= (Geometry) next.getDefaultGeometry();
                         linefeatures=sf.getFeatures().features();
 
+                        CoordinateReferenceSystem beatCRS = beatLayer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
+                        CoordinateReferenceSystem lineCRS = sf.getSchema().getCoordinateReferenceSystem();
+                        MathTransform transform=null;
+
+                        transform= CRS.findMathTransform(lineCRS,beatCRS,true);
+
+
                         while (linefeatures.hasNext())
                         {
                             SimpleFeature lineFeature=linefeatures.next();
-                            Geometry lineGeometry=(Geometry) lineFeature.getDefaultGeometry();
+                            Geometry temp=(Geometry) lineFeature.getDefaultGeometry();
+                            Geometry lineGeometry = JTS.transform(temp,transform);
 
-                            if (lineGeometry.intersects(beatGeometry))
+                            if (beatGeometry.intersects(lineGeometry))
                             {
                                 System.out.println("here");
                                 Style st= SLD.createLineStyle(Color.ORANGE,3);
-                                SimpleFeature f= (SimpleFeature) lineGeometry.intersection(beatGeometry);
-                                fcollect.add(f);
-                                Layer newLayer=new FeatureLayer(fcollect,st,"new layer");
+
+                                lineGeometry.intersection(beatGeometry);
+                                //fcollect.add();
+                                Layer newLayer=new FeatureLayer(fcollect,st,"newLayer");
                                 map.layers().add(newLayer);
                                 return;
                             }
@@ -231,8 +248,11 @@ public class Model
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
-                }
-                finally {
+                } catch (FactoryException e) {
+                    e.printStackTrace();
+                } catch (TransformException e) {
+                    e.printStackTrace();
+                } finally {
                     simpleFeatureIterator.close();
                     linefeatures.close();
                 }
