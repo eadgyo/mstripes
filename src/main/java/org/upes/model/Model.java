@@ -18,12 +18,12 @@ import org.geotools.styling.SLD;
 import org.geotools.styling.Style;
 import org.geotools.styling.StyleFactory;
 import org.geotools.styling.StyleFactoryImpl;
-import org.opengis.feature.Feature;
 import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.PropertyType;
 import org.upes.MyStyleFactory;
+import org.upes.PersonalConstants;
 
 import javax.swing.table.TableModel;
 import java.awt.*;
@@ -41,7 +41,7 @@ public class Model
     private SimpleFeatureSource featureSource;
     private MapContent          map;
     private MyTableModel        tableModel;
-    private String initPath="/";
+    private String initPath= PersonalConstants.INIT_PATH; //"/";
     private MyStyleFactory               myStyleFactory;
     private AbstractGridCoverage2DReader reader;
     private StyleFactory sf = new StyleFactoryImpl();

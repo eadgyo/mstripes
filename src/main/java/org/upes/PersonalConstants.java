@@ -5,4 +5,5 @@ package org.upes;
  */
 public interface PersonalConstants
 {
+    String INIT_PATH = "/";
 }
