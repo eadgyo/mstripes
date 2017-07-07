@@ -2,6 +2,7 @@ package org.upes.model;
 
 import com.vividsolutions.jts.geom.Geometry;
 import org.geotools.coverage.grid.io.AbstractGridCoverage2DReader;
+import org.geotools.data.FeatureSource;
 import org.geotools.data.FileDataStore;
 import org.geotools.data.FileDataStoreFinder;
 import org.geotools.data.simple.SimpleFeatureIterator;
@@ -88,7 +89,6 @@ public class Model
                 if (geometry != null && geometry.isValid()) {
 
                     featureColl.add(next);
-
                 }
             }
             Layer layer = new FeatureLayer(featureColl, style, next.getName().toString());
@@ -148,5 +148,28 @@ public class Model
     public void removeLayer(String layerName)
     {
         tableModel.removeLayer(layerName);
+    }
+
+    public void computeArea(Layer layer)
+    {
+        FeatureLayer             layer1     = (FeatureLayer) layer;
+        FeatureSource<?, ?>      featureSource = layer.getFeatureSource();
+
+        try
+        {
+            FeatureIterator<?>      iterator = featureSource.getFeatures().features();
+            while (iterator.hasNext())
+            {
+                SimpleFeature next = (SimpleFeature) iterator.next();
+                Geometry geometry = (Geometry) next.getDefaultGeometry();
+                double   area     = geometry.getArea();
+
+                System.out.println(area);
+            }
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
     }
 }

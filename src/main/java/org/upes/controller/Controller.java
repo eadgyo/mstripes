@@ -1,6 +1,19 @@
 package org.upes.controller;
 
+import org.geotools.data.FeatureSource;
+import org.geotools.data.simple.SimpleFeatureCollection;
+import org.geotools.data.simple.SimpleFeatureIterator;
+import org.geotools.factory.CommonFactoryFinder;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.Layer;
+import org.geotools.swing.event.MapMouseEvent;
+import org.geotools.swing.event.MapMouseListener;
+import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.type.FeatureType;
+import org.opengis.filter.Filter;
+import org.opengis.filter.FilterFactory2;
+import com.vividsolutions.jts.geom.Geometry;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.upes.Constants;
 import org.upes.model.Model;
 import org.upes.view.MapPanel;
@@ -57,6 +70,8 @@ public class Controller
 
         // Link Table
         view.mapPanel.table.setModel(model.getTableModel());
+
+        mapPanel.mapPane.addMouseListener(new MouseMapListener());
     }
 
     private class AddAction extends AbstractAction {
@@ -189,6 +204,93 @@ public class Controller
                     model.removeLayer(oldLayer.getTitle());
                 }
             }
+        }
+    }
+
+    private class MouseMapListener implements MapMouseListener
+    {
+
+        SimpleFeatureCollection grabFeaturesInBoundingBox(MapMouseEvent ev)
+                throws Exception {
+            FilterFactory2 ff     = CommonFactoryFinder.getFilterFactory2();
+            FeatureSource<?, ?> featureSource = mapPanel.mapPane.getMapContent()
+                                                                .layers()
+                                                                .iterator()
+                                                                .next()
+                                                                .getFeatureSource();
+            FeatureType    schema = featureSource.getSchema();
+
+            // usually "THE_GEOM" for shapefiles
+            String geometryPropertyName = schema.getGeometryDescriptor().getLocalName();
+            CoordinateReferenceSystem targetCRS = mapPanel.mapPane.getMapContent().getCoordinateReferenceSystem();
+
+            ReferencedEnvelope bbox = ev.getEnvelopeByPixels(2);
+
+            Filter filter = ff.bbox(ff.property(geometryPropertyName), bbox);
+            return (SimpleFeatureCollection) featureSource.getFeatures(filter);
+        }
+
+
+        @Override
+        public void onMouseClicked(MapMouseEvent mapMouseEvent)
+        {
+
+        }
+
+        @Override
+        public void onMouseDragged(MapMouseEvent mapMouseEvent)
+        {
+
+        }
+
+        @Override
+        public void onMouseEntered(MapMouseEvent mapMouseEvent)
+        {
+
+        }
+
+        @Override
+        public void onMouseExited(MapMouseEvent mapMouseEvent)
+        {
+
+        }
+
+        @Override
+        public void onMouseMoved(MapMouseEvent mapMouseEvent)
+        {
+
+        }
+
+        @Override
+        public void onMousePressed(MapMouseEvent ev)
+        {
+            try
+            {
+                SimpleFeatureCollection simpleFeatureCollection = grabFeaturesInBoundingBox(ev);
+                SimpleFeatureIterator features = simpleFeatureCollection.features();
+                while (features.hasNext())
+                {
+                    SimpleFeature fa       = features.next();
+                    Geometry geometry = (Geometry) fa.getDefaultGeometry();
+                    System.out.println(geometry.getArea());
+                }
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void onMouseReleased(MapMouseEvent mapMouseEvent)
+        {
+
+        }
+
+        @Override
+        public void onMouseWheelMoved(MapMouseEvent mapMouseEvent)
+        {
+
         }
     }
 }
