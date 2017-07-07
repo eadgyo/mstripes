@@ -237,6 +237,7 @@ public class Model
                                 Style st= SLD.createLineStyle(Color.ORANGE,3);
 
                                 lineGeometry.intersection(beatGeometry);
+
                                 //fcollect.add();
                                 Layer newLayer=new FeatureLayer(fcollect,st,"newLayer");
                                 map.layers().add(newLayer);
