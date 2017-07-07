@@ -160,7 +160,7 @@ public class Controller
                 }
                 deleteAction.setEnabled(false);
             }
-            view.layerDialog.setVisible(false);
+           view.layerDialog.setVisible(false);
         }
     }
 
@@ -176,10 +176,11 @@ public class Controller
         public void actionPerformed(ActionEvent e) {
             List<Layer> oldLayers = new ArrayList<>(model.getMap().layers());
 
-
             view.layerDialog.setVisible(true);
+            okAction.actionPerformed(e);
 
             // Get all removed layers
+
 
             List<Layer> layers = model.getMap().layers();
             for (Layer oldLayer : oldLayers)
