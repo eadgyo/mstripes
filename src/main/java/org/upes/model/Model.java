@@ -1,7 +1,6 @@
 package org.upes.model;
 
 import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryFactory;
 import org.geotools.coverage.grid.io.AbstractGridCoverage2DReader;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.FeatureSource;
@@ -33,13 +32,16 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
 import org.upes.MyStyleFactory;
+import org.upes.PersonalConstants;
 
 import javax.swing.table.TableModel;
 import java.awt.*;
-import java.awt.List;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.ListIterator;
+import java.util.Vector;
 
 /**
  * Created by eadgyo on 27/06/17.
@@ -50,7 +52,7 @@ public class Model
     private SimpleFeatureSource featureSource;
     private MapContent          map;
     private MyTableModel        tableModel;
-    private String initPath= "F:/intern/Basemaps";
+    private String initPath= PersonalConstants.INIT_PATH;
     private MyStyleFactory               myStyleFactory;
     private AbstractGridCoverage2DReader reader;
     private StyleFactory sf = new StyleFactoryImpl();
