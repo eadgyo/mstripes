@@ -219,10 +219,15 @@ public class Model
                 SimpleFeatureIterator simpleFeatureIterator=null;
                 Layer newLayer=null;
                 AreaFunction areaFunction=new AreaFunction();
-                Beat currBeat;
+                Beat currBeat=null;
+                Iterator<Beat> beatIterator=null;
                 try {
                     simpleFeatureIterator= (SimpleFeatureIterator) beatLayer.getFeatureSource().getFeatures().features();
                     int count=0;
+                    if(!beats.isEmpty())
+                    {
+                        beatIterator=beats.iterator();
+                    }
                     while (simpleFeatureIterator.hasNext())
                     {
                         SimpleFeature next=simpleFeatureIterator.next();
@@ -232,9 +237,16 @@ public class Model
                         CoordinateReferenceSystem beatCRS = beatLayer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
                         CoordinateReferenceSystem lineCRS = sf.getSchema().getCoordinateReferenceSystem();
                         MathTransform transform=null;
-                        currBeat=new Beat(next.getID());
+
                         transform= CRS.findMathTransform(lineCRS,beatCRS,true);
-                        currBeat.setArea(areaFunction.getArea(beatGeometry));
+
+                        if(beats.size()!=beatLayer.getFeatureSource().getFeatures().size()) {
+                            currBeat = new Beat(next.getID());
+                            currBeat.setArea(areaFunction.getArea(beatGeometry));
+                        }
+                        else
+                        {currBeat=beatIterator.next();}
+
                         int id=0;
                         double lineLength=0;
                         while (linefeatures.hasNext())
@@ -245,10 +257,10 @@ public class Model
 
                             if (beatGeometry.intersects(lineGeometry))
                             {
-                                SimpleFeatureType TYPE = DataUtilities.createType("roads", "line", "the_geom:MultiLineString");
+                                SimpleFeatureType TYPE = DataUtilities.createType(lineFeature.getName().toString(), lineFeature.getName().toString(), "the_geom:"+lineGeometry.getGeometryType());
                                 SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder((SimpleFeatureType) TYPE);
                                 featureBuilder.add(lineGeometry.intersection(beatGeometry));
-                                SimpleFeature feature = featureBuilder.buildFeature(next.getID()+"line"+id);
+                                SimpleFeature feature = featureBuilder.buildFeature(next.getID()+lineFeature.getName().toString()+id);
                                 id++;
                                 lineLength+=lineGeometry.getLength();
                                 fcollect.add(feature);

@@ -93,7 +93,6 @@ public class Controller
             if (sourceFile == null)
                 return;
 
-
             mapPanel.mapPane.setMapContent(null);
 
             try
@@ -198,7 +197,6 @@ public class Controller
             okAction.actionPerformed(e);
 
             // Get all removed layers
-
 
             List<Layer> layers = model.getMap().layers();
             for (Layer oldLayer : oldLayers)
