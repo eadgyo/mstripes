@@ -36,10 +36,10 @@ import org.upes.MyStyleFactory;
 
 import javax.swing.table.TableModel;
 import java.awt.*;
+import java.awt.List;
 import java.io.File;
 import java.io.IOException;
-import java.util.ListIterator;
-import java.util.Vector;
+import java.util.*;
 
 /**
  * Created by eadgyo on 27/06/17.
@@ -54,6 +54,8 @@ public class Model
     private MyStyleFactory               myStyleFactory;
     private AbstractGridCoverage2DReader reader;
     private StyleFactory sf = new StyleFactoryImpl();
+
+    LinkedList<Beat> beats=new LinkedList<Beat>();
 
     public Model()
     {
@@ -108,12 +110,15 @@ public class Model
             Layer layer = new FeatureLayer(featureColl, style, next.getName().toString());
             map.layers().add(layer);
 
-            //Calculating area just for BEAT file
-            if (featureSource.getSchema().getTypeName().equalsIgnoreCase("BEAT"))
-            {calculate_area(featureSource);}
-
             if (featureSource.getSchema().getTypeName().equalsIgnoreCase("forst_road_core"))
             {calculate_road_length(featureSource);}
+
+            Iterator<Beat> beatIterator=beats.iterator();
+            while (beatIterator.hasNext())
+            {
+                Beat temp=beatIterator.next();
+                System.out.println("id: "+temp.getId()+" area: "+temp.getArea()+" road: "+temp.getRoadLength());
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -171,9 +176,11 @@ public class Model
         tableModel.removeLayer(layerName);
     }
 
+    // method for calculating area
     public void calculate_area(SimpleFeatureSource sf)
     {
         SimpleFeatureIterator features = null;
+
         try {
             features=sf.getFeatures().features();
             AreaFunction areaFunction=new AreaFunction();
@@ -183,7 +190,7 @@ public class Model
             {
                 next=features.next();
                 Geometry geometry=(Geometry) next.getDefaultGeometry();
-                System.out.println(areaFunction.getArea(geometry));
+           //     System.out.println(areaFunction.getArea(geometry));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -195,6 +202,7 @@ public class Model
 
     public void calculate_road_length(SimpleFeatureSource sf)
     {
+
         ListIterator it=map.layers().listIterator();
         int flag=0;
         Layer beatLayer=null;
@@ -209,24 +217,26 @@ public class Model
             {
                 SimpleFeatureIterator linefeatures=null;
                 SimpleFeatureIterator simpleFeatureIterator=null;
-                DefaultFeatureCollection fcollect=new DefaultFeatureCollection();
                 Layer newLayer=null;
+                AreaFunction areaFunction=new AreaFunction();
+                Beat currBeat;
                 try {
                     simpleFeatureIterator= (SimpleFeatureIterator) beatLayer.getFeatureSource().getFeatures().features();
-                    int innerFlag=0;
+                    int count=0;
                     while (simpleFeatureIterator.hasNext())
                     {
                         SimpleFeature next=simpleFeatureIterator.next();
                         Geometry beatGeometry= (Geometry) next.getDefaultGeometry();
                         linefeatures=sf.getFeatures().features();
-
+                        DefaultFeatureCollection fcollect=new DefaultFeatureCollection();
                         CoordinateReferenceSystem beatCRS = beatLayer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
                         CoordinateReferenceSystem lineCRS = sf.getSchema().getCoordinateReferenceSystem();
                         MathTransform transform=null;
-
+                        currBeat=new Beat(next.getID());
                         transform= CRS.findMathTransform(lineCRS,beatCRS,true);
-
-
+                        currBeat.setArea(areaFunction.getArea(beatGeometry));
+                        int id=0;
+                        double lineLength=0;
                         while (linefeatures.hasNext())
                         {
                             SimpleFeature lineFeature=linefeatures.next();
@@ -235,21 +245,28 @@ public class Model
 
                             if (beatGeometry.intersects(lineGeometry))
                             {
-                                SimpleFeatureType TYPE = DataUtilities.createType("test", "line", "the_geom:MultiLineString");
+                                SimpleFeatureType TYPE = DataUtilities.createType("roads", "line", "the_geom:MultiLineString");
                                 SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder((SimpleFeatureType) TYPE);
                                 featureBuilder.add(lineGeometry.intersection(beatGeometry));
-                                SimpleFeature feature = featureBuilder.buildFeature("LineString_Sample");
-
+                                SimpleFeature feature = featureBuilder.buildFeature(next.getID()+"line"+id);
+                                id++;
+                                lineLength+=lineGeometry.getLength();
                                 fcollect.add(feature);
-
-                                innerFlag=1;
-                                break;
                             }
                         }
-                        linefeatures.close();
-                        if (innerFlag==1)
-                        {break;}
+                        currBeat.setRoadLength(lineLength);
 
+                        if(!fcollect.isEmpty())
+                        { count++;
+                        Style st= SLD.createLineStyle(Color.getHSBColor((count*2)%360,(count+10),(count)%100),3);
+                        newLayer=new FeatureLayer(fcollect,st,"newLayer"+count);
+
+                                map.layers().add(newLayer);
+
+
+                        }
+                        linefeatures.close();
+                        beats.add(currBeat);
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -264,9 +281,6 @@ public class Model
                     linefeatures.close();
                 }
 
-                Style st= SLD.createLineStyle(Color.ORANGE,3);
-                newLayer=new FeatureLayer(fcollect,st,"newLayer");
-                map.layers().add(newLayer);
         }
 
     }
@@ -285,7 +299,7 @@ public class Model
                 Geometry geometry = (Geometry) next.getDefaultGeometry();
                 double   area     = geometry.getArea();
 
-                System.out.println(area);
+              //  System.out.println(area);
             }
         }
         catch (IOException e)
