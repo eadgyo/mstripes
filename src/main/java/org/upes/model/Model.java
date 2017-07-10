@@ -31,6 +31,7 @@ import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
+import org.upes.Constants;
 import org.upes.MyStyleFactory;
 import org.upes.PersonalConstants;
 
@@ -38,10 +39,7 @@ import javax.swing.table.TableModel;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.ListIterator;
-import java.util.Vector;
+import java.util.*;
 
 /**
  * Created by eadgyo on 27/06/17.
@@ -53,17 +51,12 @@ public class Model
     private MapContent          map;
     private MyTableModel        tableModel;
 
-    public void multiplyColumn(Number factor, int row, int column)
-    {
-        tableModel.multiplyColumn(factor, row, column);
-    }
-
     private String initPath = PersonalConstants.INIT_PATH;
     private MyStyleFactory               myStyleFactory;
     private AbstractGridCoverage2DReader reader;
     private StyleFactory sf = new StyleFactoryImpl();
 
-    LinkedList<Beat> beats=new LinkedList<Beat>();
+    private Layer layerRoad = null;
 
     public Model()
     {
@@ -80,11 +73,17 @@ public class Model
         featureSource = store.getFeatureSource();
 
         // Add the first layer to map
-        loadMap();
+        Layer addedLayer = loadMap();
 
-        // Load the dbf file
-        loadDbf();
+        // Compute road length if available
+        if (addedLayer != null)
+        {
+            checkLayerRoad(addedLayer);
+            updateRoadLength(addedLayer);
 
+            // Load the dbf file
+            loadDbf(addedLayer);
+        }
     }
 
     public String getInitPath()
@@ -98,7 +97,84 @@ public class Model
         initPath=path;
     }
 
-    public void loadMap() {
+    public void checkLayerRoad(Layer testedLayer)
+    {
+        if (featureSource.getSchema().getTypeName().equalsIgnoreCase(Constants.ROAD_NAME_FILE))
+        {
+            layerRoad = testedLayer;
+
+            // Add column
+            tableModel.addColumn("RoadLength");
+
+            // Compute road length for already added layer
+            java.util.List<Layer> layers = map.layers();
+            for (Layer layer : layers)
+            {
+                updateRoadLength(layer);
+            }
+        }
+    }
+
+    public boolean isRoadLengthNecessary(Layer addedLayer)
+    {
+        FeatureCollection<SimpleFeatureType, SimpleFeature> collection = null;
+        try
+        {
+            collection = (FeatureCollection<SimpleFeatureType, SimpleFeature>) addedLayer.getFeatureSource().getFeatures();
+            try (FeatureIterator<SimpleFeature> features = collection.features())
+            {
+                while (features.hasNext())
+                {
+                    SimpleFeature feature = features.next();
+                    Vector        vector  = new Vector<>();
+                    if (feature.getProperties("STATUS") != null)
+                        return true;
+                }
+            }
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public void updateRoadLength(Layer addedLayer)
+    {
+        if (layerRoad == null || addedLayer == layerRoad || !isRoadLengthNecessary(addedLayer))
+            return;
+
+        LinkedList<Beat> beats = calculate_road_length(layerRoad, addedLayer);
+
+        Iterator<Beat> beatIterator = beats.iterator();
+
+        FeatureCollection<SimpleFeatureType, SimpleFeature> collection = null;
+        try
+        {
+            collection = (FeatureCollection<SimpleFeatureType, SimpleFeature>) addedLayer.getFeatureSource()
+                                                                                         .getFeatures();
+            FeatureIterator<SimpleFeature> features = collection.features();
+            int roadColumn = tableModel.getColumn("RoadLength");
+            int layerStartIndex = tableModel.getLayerStartIndex(addedLayer.getTitle());
+            int layerEndIndex = tableModel.getLayerEndIndex(addedLayer.getTitle());
+            for (int row = layerStartIndex; row < layerEndIndex; row++)
+            {
+                SimpleFeature next = features.next();
+                Beat temp=beatIterator.next();
+                double status = (double) next.getAttribute("STATUS");
+                double result = status * temp.getRoadLength();
+                tableModel.setValueAt(result, row, roadColumn);
+            }
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+
+
+    }
+
+    public Layer loadMap() {
 
         Style style=myStyleFactory.setStyle(featureSource.getSchema());
 
@@ -118,26 +194,20 @@ public class Model
             Layer layer = new FeatureLayer(featureColl, style, next.getName().toString());
             map.layers().add(layer);
 
-            if (featureSource.getSchema().getTypeName().equalsIgnoreCase("forst_road_core"))
-            {calculate_road_length(featureSource);}
-
-            Iterator<Beat> beatIterator=beats.iterator();
-            while (beatIterator.hasNext())
-            {
-                Beat temp=beatIterator.next();
-                System.out.println("id: "+temp.getId()+" area: "+temp.getArea()+" road: "+temp.getRoadLength());
-            }
+            return layer;
 
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
             features.close();
         }
+        return null;
     }
 
-    public void loadDbf() throws IOException
+    public void loadDbf(Layer addedLayer) throws IOException
     {
-        FeatureCollection<SimpleFeatureType, SimpleFeature> collection = featureSource.getFeatures();
+        FeatureCollection<SimpleFeatureType, SimpleFeature> collection = (FeatureCollection<SimpleFeatureType,
+                SimpleFeature>) addedLayer.getFeatureSource().getFeatures();
         try (FeatureIterator<SimpleFeature> features = collection.features()) {
 
             while (features.hasNext())
@@ -208,89 +278,78 @@ public class Model
         }
     }
 
-    public void calculate_road_length(SimpleFeatureSource sf)
+    public LinkedList<Beat> calculate_road_length(Layer roadLayer, Layer layer)
     {
-
-        ListIterator it=map.layers().listIterator();
-        int flag=0;
-        Layer beatLayer=null;
-        while (it.hasNext()) {
-            beatLayer = (Layer) it.next();
-            if (beatLayer.getTitle().equalsIgnoreCase("BEAT")) {
-                flag = 1;
-                break;
-            }
-        }
-            if(flag==1)
+        LinkedList<Beat> beats=new LinkedList<Beat>();
+        SimpleFeatureIterator linefeatures=null;
+        SimpleFeatureIterator simpleFeatureIterator=null;
+        Layer newLayer=null;
+        AreaFunction areaFunction=new AreaFunction();
+        Beat currBeat;
+        try {
+            simpleFeatureIterator= (SimpleFeatureIterator) layer.getFeatureSource().getFeatures().features();
+            int count=0;
+            while (simpleFeatureIterator.hasNext())
             {
-                SimpleFeatureIterator linefeatures=null;
-                SimpleFeatureIterator simpleFeatureIterator=null;
-                Layer newLayer=null;
-                AreaFunction areaFunction=new AreaFunction();
-                Beat currBeat;
-                try {
-                    simpleFeatureIterator= (SimpleFeatureIterator) beatLayer.getFeatureSource().getFeatures().features();
-                    int count=0;
-                    while (simpleFeatureIterator.hasNext())
+                SimpleFeature next=simpleFeatureIterator.next();
+                Geometry beatGeometry= (Geometry) next.getDefaultGeometry();
+                linefeatures = (SimpleFeatureIterator) roadLayer.getFeatureSource().getFeatures().features();
+                DefaultFeatureCollection fcollect=new DefaultFeatureCollection();
+                CoordinateReferenceSystem beatCRS = layer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
+                CoordinateReferenceSystem lineCRS = roadLayer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
+                MathTransform transform=null;
+                currBeat=new Beat(next.getID());
+                transform= CRS.findMathTransform(lineCRS,beatCRS,true);
+                currBeat.setArea(areaFunction.getArea(beatGeometry));
+                int id=0;
+                double lineLength=0;
+                while (linefeatures.hasNext())
+                {
+                    SimpleFeature lineFeature=linefeatures.next();
+                    Geometry temp=(Geometry) lineFeature.getDefaultGeometry();
+                    Geometry lineGeometry = JTS.transform(temp,transform);
+
+                    if (beatGeometry.intersects(lineGeometry))
                     {
-                        SimpleFeature next=simpleFeatureIterator.next();
-                        Geometry beatGeometry= (Geometry) next.getDefaultGeometry();
-                        linefeatures=sf.getFeatures().features();
-                        DefaultFeatureCollection fcollect=new DefaultFeatureCollection();
-                        CoordinateReferenceSystem beatCRS = beatLayer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
-                        CoordinateReferenceSystem lineCRS = sf.getSchema().getCoordinateReferenceSystem();
-                        MathTransform transform=null;
-                        currBeat=new Beat(next.getID());
-                        transform= CRS.findMathTransform(lineCRS,beatCRS,true);
-                        currBeat.setArea(areaFunction.getArea(beatGeometry));
-                        int id=0;
-                        double lineLength=0;
-                        while (linefeatures.hasNext())
-                        {
-                            SimpleFeature lineFeature=linefeatures.next();
-                            Geometry temp=(Geometry) lineFeature.getDefaultGeometry();
-                            Geometry lineGeometry = JTS.transform(temp,transform);
-
-                            if (beatGeometry.intersects(lineGeometry))
-                            {
-                                SimpleFeatureType TYPE = DataUtilities.createType("roads", "line", "the_geom:MultiLineString");
-                                SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder((SimpleFeatureType) TYPE);
-                                featureBuilder.add(lineGeometry.intersection(beatGeometry));
-                                SimpleFeature feature = featureBuilder.buildFeature(next.getID()+"line"+id);
-                                id++;
-                                lineLength+=lineGeometry.getLength();
-                                fcollect.add(feature);
-                            }
-                        }
-                        currBeat.setRoadLength(lineLength);
-
-                        if(!fcollect.isEmpty())
-                        { count++;
-                        Style st= SLD.createLineStyle(Color.getHSBColor((count*2)%360,(count+10),(count)%100),3);
-                        newLayer=new FeatureLayer(fcollect,st,"newLayer"+count);
-
-                                map.layers().add(newLayer);
-
-
-                        }
-                        linefeatures.close();
-                        beats.add(currBeat);
+                        SimpleFeatureType TYPE = DataUtilities.createType("roads", "line", "the_geom:MultiLineString");
+                        SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder((SimpleFeatureType) TYPE);
+                        Geometry intersection = lineGeometry.intersection(beatGeometry);
+                        featureBuilder.add(intersection);
+                        SimpleFeature feature = featureBuilder.buildFeature(next.getID()+"line"+id);
+                        id++;
+                        lineLength+=intersection.getLength();
+                        fcollect.add(feature);
                     }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (FactoryException e) {
-                    e.printStackTrace();
-                } catch (TransformException e) {
-                    e.printStackTrace();
-                } catch (SchemaException e) {
-                    e.printStackTrace();
-                } finally {
-                    simpleFeatureIterator.close();
-                    linefeatures.close();
                 }
+                currBeat.setRoadLength(lineLength);
 
+                if(!fcollect.isEmpty())
+                { count++;
+                Style st= SLD.createLineStyle(Color.getHSBColor((count*2)%360,(count+10),(count)%100),3);
+                newLayer=new FeatureLayer(fcollect,st,"newLayer"+count);
+
+                        map.layers().add(newLayer);
+
+
+                }
+                linefeatures.close();
+                beats.add(currBeat);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (FactoryException e) {
+            e.printStackTrace();
+        } catch (TransformException e) {
+            e.printStackTrace();
+        } catch (SchemaException e) {
+            e.printStackTrace();
+        } finally
+        {
+            simpleFeatureIterator.close();
+            linefeatures.close();
         }
 
+        return beats;
     }
 
     public void computeArea(Layer layer)
@@ -314,5 +373,10 @@ public class Model
         {
             e.printStackTrace();
         }
+    }
+
+    public void multiplyColumn(Number factor, int row, int column)
+    {
+        tableModel.multiplyColumn(factor, row, column);
     }
 }

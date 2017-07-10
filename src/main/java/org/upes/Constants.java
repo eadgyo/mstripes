@@ -56,4 +56,6 @@ public interface Constants
     int STATE=6;
     int WIRELESS_STATION=1;
 
+    String ROAD_NAME_FILE = "forst_road_core";
+
 }
