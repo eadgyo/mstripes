@@ -120,6 +120,12 @@ public class MyTableModel extends DefaultTableModel
             }
         }
     }
+
+    public void multiplyColumn(Number factor, int row, int column)
+    {
+        Number valueAt = (Number) getValueAt(row, column);
+        setValueAt(NumberOp.multiply(valueAt, factor), row, column);
+    }
 }
 
 

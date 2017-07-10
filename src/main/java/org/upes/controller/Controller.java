@@ -1,5 +1,6 @@
 package org.upes.controller;
 
+import com.vividsolutions.jts.geom.Geometry;
 import org.geotools.data.FeatureSource;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
@@ -12,7 +13,6 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.type.FeatureType;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
-import com.vividsolutions.jts.geom.Geometry;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.upes.Constants;
 import org.upes.model.Model;
@@ -43,6 +43,7 @@ public class Controller
     private AddAction addAction = new AddAction();
     private OkAction okAction = new OkAction();
     private  DeleteAction deleteAction= new DeleteAction();
+    private MulAction mulAction = new MulAction();
 
     public Controller(View view, Model model)
     {
@@ -55,6 +56,7 @@ public class Controller
         mapPanel.addButton.setAction(addAction);
         view.layerDialog.okButton.setAction(okAction);
         mapPanel.deleteButton.setAction(deleteAction);
+        mapPanel.multiplyButton.setAction(mulAction);
 
         addAction.setEnabled(false);
         deleteAction.setEnabled(false);
@@ -111,6 +113,43 @@ public class Controller
             mapPanel.mapPane.setMapContent(model.getMap());
             mapPanel.mapPane.repaint();
 
+        }
+    }
+
+    private class MulAction extends AbstractAction {
+        public MulAction() {
+            super(Constants.NAME_MUL);
+            this.putValue(SHORT_DESCRIPTION, Constants.DESC_MUL);
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent actionEvent)
+        {
+            // Ask for the multiply factor
+            String s = JOptionPane.showInputDialog(Constants.QUESTION_MUL, 2);
+            if (s == null || s.equals(""))
+                return;
+
+            double d = 0;
+
+            // Try to convert string to number
+            try
+            {
+                d = Double.parseDouble(s);
+            }
+            catch(NumberFormatException nfe)
+            {
+                return;
+            }
+
+            // Get selected rows
+            int selectedColumn = mapPanel.table.getSelectedColumn();
+            int[] selectedRows = mapPanel.table.getSelectedRows();
+
+            for (int selectedRow : selectedRows)
+            {
+                model.multiplyColumn(d, selectedRow, selectedColumn);
+            }
         }
     }
 
@@ -189,7 +228,6 @@ public class Controller
             this.putValue(SHORT_DESCRIPTION, Constants.DESC_DEL_MAP);
         }
 
-
         @Override
         public void actionPerformed(ActionEvent e) {
             List<Layer> oldLayers = new ArrayList<>(model.getMap().layers());
@@ -198,8 +236,6 @@ public class Controller
             okAction.actionPerformed(e);
 
             // Get all removed layers
-
-
             List<Layer> layers = model.getMap().layers();
             for (Layer oldLayer : oldLayers)
             {

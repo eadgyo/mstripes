@@ -52,7 +52,13 @@ public class Model
     private SimpleFeatureSource featureSource;
     private MapContent          map;
     private MyTableModel        tableModel;
-    private String initPath= PersonalConstants.INIT_PATH;
+
+    public void multiplyColumn(Number factor, int row, int column)
+    {
+        tableModel.multiplyColumn(factor, row, column);
+    }
+
+    private String initPath = PersonalConstants.INIT_PATH;
     private MyStyleFactory               myStyleFactory;
     private AbstractGridCoverage2DReader reader;
     private StyleFactory sf = new StyleFactoryImpl();

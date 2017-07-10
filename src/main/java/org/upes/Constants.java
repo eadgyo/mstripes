@@ -21,6 +21,11 @@ public interface Constants
     String NAME_DEL_MAP="Customize";
     String DESC_DEL_MAP="Customize layers from map";
 
+    String NAME_MUL = "Multiply";
+    String DESC_MUL = "Multiply selected rows and column by a factor";
+
+    String QUESTION_MUL = "Multiply factor";
+
     String NAME_OK_DIALOG = "OK";
 
     String TITLE_NOT_VALID_SHP = "Error ShapeFile";
