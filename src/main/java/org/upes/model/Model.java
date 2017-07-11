@@ -39,7 +39,9 @@ import javax.swing.table.TableModel;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Vector;
 
 /**
  * Created by eadgyo on 27/06/17.
@@ -57,6 +59,8 @@ public class Model
     private StyleFactory sf = new StyleFactoryImpl();
 
     private Layer layerRoad = null;
+    private Layer selectedFeatures = null;
+    private DefaultFeatureCollection featureCollection = new DefaultFeatureCollection();
 
     public Model()
     {
@@ -78,6 +82,7 @@ public class Model
         // Compute road length if available
         if (addedLayer != null)
         {
+            checkLayerBeat(addedLayer);
             checkLayerRoad(addedLayer);
             updateRoadLength(addedLayer);
 
@@ -95,6 +100,33 @@ public class Model
     {
         if(!path.isEmpty())
         initPath=path;
+    }
+
+    public void checkLayerBeat(Layer beatLayer)
+    {
+        if (!beatLayer.getTitle().equals("BEAT"))
+            return;
+
+        try
+        {
+            Style style = SLD.createSimpleStyle(beatLayer.getFeatureSource().getFeatures().features().next().getType
+                    (), Color.RED);
+            selectedFeatures = new FeatureLayer(featureCollection, style, "Selection");
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    public DefaultFeatureCollection getFeatureCollection()
+    {
+        return featureCollection;
+    }
+
+    public Layer getLayerSelection()
+    {
+        return selectedFeatures;
     }
 
     public void checkLayerRoad(Layer testedLayer)
@@ -126,7 +158,6 @@ public class Model
                 while (features.hasNext())
                 {
                     SimpleFeature feature = features.next();
-                    Vector        vector  = new Vector<>();
                     if (feature.getProperties("STATUS") != null)
                         return true;
                 }
@@ -154,7 +185,7 @@ public class Model
             collection = (FeatureCollection<SimpleFeatureType, SimpleFeature>) addedLayer.getFeatureSource()
                                                                                          .getFeatures();
             FeatureIterator<SimpleFeature> features = collection.features();
-            int roadColumn = tableModel.getColumn("RoadLength");
+            int roadColumn = tableModel.addColumnIfNeeded("RoadLength");
             int layerStartIndex = tableModel.getLayerStartIndex(addedLayer.getTitle());
             int layerEndIndex = tableModel.getLayerEndIndex(addedLayer.getTitle());
             for (int row = layerStartIndex; row < layerEndIndex; row++)
@@ -218,7 +249,7 @@ public class Model
                 {
                     if (isValidInfo(attribute.getType()))
                     {
-                        int columnRow = tableModel.getColumn(attribute.getName().toString());
+                        int columnRow = tableModel.addColumnIfNeeded(attribute.getName().toString());
                         while (columnRow >= vector.size())
                         {
                             vector.add("");

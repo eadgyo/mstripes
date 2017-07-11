@@ -5,10 +5,14 @@ import org.geotools.data.FeatureSource;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.factory.CommonFactoryFinder;
+import org.geotools.feature.DefaultFeatureCollection;
+import org.geotools.feature.FeatureIterator;
+import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.Layer;
 import org.geotools.swing.event.MapMouseEvent;
 import org.geotools.swing.event.MapMouseListener;
+import org.opengis.feature.Feature;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.type.FeatureType;
 import org.opengis.filter.Filter;
@@ -16,10 +20,13 @@ import org.opengis.filter.FilterFactory2;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.upes.Constants;
 import org.upes.model.Model;
+import org.upes.model.MyTableModel;
 import org.upes.view.MapPanel;
 import org.upes.view.View;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.event.ActionEvent;
@@ -27,6 +34,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 
@@ -44,6 +52,8 @@ public class Controller
     private OkAction okAction = new OkAction();
     private  DeleteAction deleteAction= new DeleteAction();
     private MulAction mulAction = new MulAction();
+
+    private MyTableListener tableListener = new MyTableListener();
 
     public Controller(View view, Model model)
     {
@@ -73,7 +83,9 @@ public class Controller
         // Link Table
         view.mapPanel.table.setModel(model.getTableModel());
 
+        // Add listener
         mapPanel.mapPane.addMouseListener(new MouseMapListener());
+        mapPanel.table.getSelectionModel().addListSelectionListener(tableListener);
     }
 
     private class AddAction extends AbstractAction {
@@ -330,6 +342,144 @@ public class Controller
         @Override
         public void onMouseWheelMoved(MapMouseEvent mapMouseEvent)
         {
+
+        }
+    }
+
+    public class MyTableListener implements ListSelectionListener
+    {
+
+        @Override
+        public void valueChanged(ListSelectionEvent listSelectionEvent)
+        {
+            updateSelectedLayers();
+        }
+    }
+
+    /**
+     * Quick search using row index
+     * @param layer used layer
+     * @param rowIndex row relative to start of feature
+     * @return row index
+     */
+    private Feature findFeatureFast(Layer layer, int rowIndex)
+    {
+        FeatureIterator<?> features = null;
+        try
+        {
+            features = layer.getFeatureSource().getFeatures().features();
+            for (int i = 0; i < rowIndex - 1; i++)
+            {
+                features.next();
+            }
+            return features.next();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private Feature findFeature(Layer layer, String attributeName, String searchAttribute)
+    {
+        try
+        {
+            FeatureIterator<?> features = layer.getFeatureSource().getFeatures().features();
+            while (features.hasNext())
+            {
+                SimpleFeature next = (SimpleFeature) features.next();
+                Object        attribute = next.getAttribute(attributeName);
+
+                if (attribute != null && attribute.equals(searchAttribute))
+                    return next;
+            }
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private Layer getBeatLayer()
+    {
+        Iterator<Layer> iterator = mapPanel.mapPane.getMapContent()
+                                                   .layers()
+                                                   .iterator();
+        while (iterator.hasNext())
+        {
+            Layer next = iterator.next();
+            if (next.getTitle().equals("BEAT"))
+                return next;
+        }
+
+        return null;
+    }
+
+    private void removeLayer(Layer layer)
+    {
+        if (model.getMap().layers().contains(layer))
+            model.getMap().removeLayer(layer);
+
+    }
+
+    private void addLayer(Layer layer)
+    {
+        if (!model.getMap().layers().contains(layer))
+            model.getMap().addLayer(layer);
+
+    }
+
+    private void updateSelectedLayers()
+    {
+        Layer        beatLayer    = getBeatLayer();
+        if (beatLayer == null)
+            return;
+
+        MyTableModel tableModel   = (MyTableModel) model.getTableModel();
+        int[]        selectedRows = mapPanel.table.getSelectedRows();
+        int          column       = tableModel.getColumn("BEAT_N");
+        int          startBeat    = tableModel.getLayerStartIndex("BEAT");
+        int          endBeat      = tableModel.getLayerEndIndex("BEAT");
+
+        for (int selectedRow : selectedRows)
+        {
+            Object valueAt = tableModel.getValueAt(selectedRow, column);
+            Layer                    layerSelection = model.getLayerSelection();
+            DefaultFeatureCollection featureSource  = null;
+            featureSource = model.getFeatureCollection();
+
+            try
+            {
+                // If it's a row from beat layer
+                if (selectedRow >= startBeat && selectedRow < endBeat)
+                {
+                    // Get layer feature
+                    SimpleFeature featureFast = (SimpleFeature) findFeatureFast(beatLayer, selectedRow - startBeat);
+
+                    // Remove feature
+                    featureSource.clear();
+
+                    // Add feature to this layer
+                    SimpleFeatureBuilder     featureBuilder = new SimpleFeatureBuilder(featureFast.getFeatureType());
+                    featureBuilder.add(featureFast.getDefaultGeometry());
+
+                    int count = featureSource.getCount();
+                    featureSource.add(featureBuilder.buildFeature("Selection" + count));
+                }
+
+                if (featureSource.getCount() != 0)
+                {
+                    addLayer(layerSelection);
+                }
+
+                //mapPanel.mapPane.getRenderer().in
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
 
         }
     }
