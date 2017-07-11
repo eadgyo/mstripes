@@ -3,7 +3,6 @@ package org.upes.model;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Vector;
 
@@ -14,7 +13,7 @@ public class MyTableModel extends DefaultTableModel
 {
     private Map<String, Integer> colNameIndex = new HashMap<>();
     private Vector<String>       colNames     = new Vector();
-    private Vector<LayerEntry> layerToMap = new Vector<>();
+    private HashMap<String, LayerEntry> layerToMap = new HashMap<>();
 
     private class LayerEntry
     {
@@ -52,12 +51,7 @@ public class MyTableModel extends DefaultTableModel
 
     private LayerEntry getLayerEntry(String layerName)
     {
-        for (LayerEntry layerEntry : layerToMap)
-        {
-            if (layerEntry.layerName.equals(layerName))
-                return layerEntry;
-        }
-        return null;
+        return layerToMap.get(layerName);
     }
 
     public void addRow(String name, Vector vector)
@@ -68,7 +62,7 @@ public class MyTableModel extends DefaultTableModel
         {
             layerEntry = new LayerEntry();
             layerEntry.layerName = name;
-            layerToMap.add(layerEntry);
+            layerToMap.put(layerEntry.layerName, layerEntry);
             layerEntry.startIndex = this.getRowCount();
         }
 
@@ -76,25 +70,10 @@ public class MyTableModel extends DefaultTableModel
         layerEntry.endIndex = this.getRowCount();
     }
 
-    private LayerEntry removeLayerEntry(String name)
-    {
-        Iterator<LayerEntry> iterator = layerToMap.iterator();
-        while (iterator.hasNext())
-        {
-            LayerEntry next = iterator.next();
-            if (next.layerName.equals(name))
-            {
-                iterator.remove();
-                return next;
-            }
-        }
-
-        return null;
-    }
 
     public void removeLayer(String name)
     {
-        LayerEntry removedLayerEntry = removeLayerEntry(name);
+        LayerEntry removedLayerEntry = layerToMap.remove(name);
 
         if (removedLayerEntry == null)
             return;
@@ -111,7 +90,7 @@ public class MyTableModel extends DefaultTableModel
     {
         int removedCount = removedEntry.endIndex - removedEntry.startIndex;
 
-        for (LayerEntry entry : layerToMap)
+        for (LayerEntry entry : layerToMap.values())
         {
             if (entry.startIndex > removedEntry.startIndex)
             {
@@ -125,6 +104,16 @@ public class MyTableModel extends DefaultTableModel
     {
         Number valueAt = (Number) getValueAt(row, column);
         setValueAt(NumberOp.multiply(valueAt, factor), row, column);
+    }
+
+    public int getLayerStartIndex(String name)
+    {
+        return layerToMap.get(name).startIndex;
+    }
+
+    public int getLayerEndIndex(String name)
+    {
+        return layerToMap.get(name).endIndex;
     }
 }
 
