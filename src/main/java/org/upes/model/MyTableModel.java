@@ -22,13 +22,23 @@ public class MyTableModel extends DefaultTableModel
         public int endIndex;
     }
 
-    public int getColumn(String columnName)
+    public int addColumnIfNeeded(String columnName)
     {
         Integer index = colNameIndex.get(columnName);
         if (index == null)
         {
             index = addColumn(columnName);
         }
+        return index;
+    }
+
+    public int getColumn(String columnName)
+    {
+        Integer index = colNameIndex.get(columnName);
+
+        if (index == null)
+            return -1;
+
         return index;
     }
 
@@ -113,6 +123,11 @@ public class MyTableModel extends DefaultTableModel
     public int getLayerEndIndex(String name)
     {
         return layerToMap.get(name).endIndex;
+    }
+
+    public boolean layerExists(String name)
+    {
+        return layerToMap.containsKey(name);
     }
 }
 
