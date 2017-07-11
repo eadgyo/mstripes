@@ -266,11 +266,11 @@ public class Controller
         SimpleFeatureCollection grabFeaturesInBoundingBox(MapMouseEvent ev)
                 throws Exception {
             FilterFactory2 ff     = CommonFactoryFinder.getFilterFactory2();
-            FeatureSource<?, ?> featureSource = mapPanel.mapPane.getMapContent()
-                                                                .layers()
-                                                                .iterator()
-                                                                .next()
-                                                                .getFeatureSource();
+            Layer beatLayer = getBeatLayer();
+            if (beatLayer==null)
+                return null ;
+
+            FeatureSource<?, ?> featureSource = beatLayer.getFeatureSource();
             FeatureType    schema = featureSource.getSchema();
 
             // usually "THE_GEOM" for shapefiles
@@ -321,12 +321,13 @@ public class Controller
            {
                try {
                    SimpleFeatureCollection simpleFeatureCollection = grabFeaturesInBoundingBox(ev);
+                   if (simpleFeatureCollection==null)
+                       return;
                    SimpleFeatureIterator features = simpleFeatureCollection.features();
 
                    while (features.hasNext()) {
                        SimpleFeature fa = features.next();
                        Geometry geometry = (Geometry) fa.getDefaultGeometry();
-                       System.out.println(fa.getName());
                        if (fa.getName().toString().equals("BEAT"))
                        {
                            int col_index = view.mapPanel.table.getColumn("BEAT_N").getModelIndex();
@@ -370,6 +371,9 @@ public class Controller
         public void valueChanged(ListSelectionEvent listSelectionEvent)
         {
             updateSelectedLayers();
+            mapPanel.mapPane.setMapContent(null);
+            mapPanel.mapPane.setMapContent(model.getMap());
+            mapPanel.mapPane.repaint();
         }
     }
 
@@ -491,6 +495,7 @@ public class Controller
                 {
                     addLayer(layerSelection);
                 }
+
 
                 //mapPanel.mapPane.getRenderer().in
             }
