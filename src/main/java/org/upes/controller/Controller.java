@@ -107,7 +107,6 @@ public class Controller
             if (sourceFile == null)
                 return;
 
-
             mapPanel.mapPane.setMapContent(null);
 
             try

@@ -158,7 +158,8 @@ public class Model
                 while (features.hasNext())
                 {
                     SimpleFeature feature = features.next();
-                    if (feature.getProperties("STATUS") != null)
+                    Vector        vector  = new Vector<>();
+                    if (feature.getAttribute("STATUS") != null)
                         return true;
                 }
             }
