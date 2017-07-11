@@ -70,7 +70,6 @@ public class MyTableModel extends DefaultTableModel
         layerEntry.endIndex = this.getRowCount();
     }
 
-
     public void removeLayer(String name)
     {
         LayerEntry removedLayerEntry = layerToMap.remove(name);
