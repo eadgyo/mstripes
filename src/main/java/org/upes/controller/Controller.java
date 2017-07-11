@@ -456,6 +456,7 @@ public class Controller
                 {
                     // Get layer feature
                     SimpleFeature featureFast = (SimpleFeature) findFeatureFast(beatLayer, selectedRow - startBeat);
+                    featureFast = (SimpleFeature) findFeature(beatLayer, "BEAT_N", (String) valueAt);
 
                     // Remove feature
                     featureSource.clear();
