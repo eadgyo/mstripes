@@ -10,6 +10,7 @@ import org.geotools.feature.FeatureIterator;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.Layer;
+import org.geotools.swing.JMapFrame;
 import org.geotools.swing.event.MapMouseEvent;
 import org.geotools.swing.event.MapMouseListener;
 import org.opengis.feature.Feature;
@@ -29,6 +30,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.TableColumn;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
@@ -315,21 +317,37 @@ public class Controller
         @Override
         public void onMousePressed(MapMouseEvent ev)
         {
-            try
-            {
-                SimpleFeatureCollection simpleFeatureCollection = grabFeaturesInBoundingBox(ev);
-                SimpleFeatureIterator features = simpleFeatureCollection.features();
-                while (features.hasNext())
-                {
-                    SimpleFeature fa       = features.next();
-                    Geometry geometry = (Geometry) fa.getDefaultGeometry();
-                    System.out.println(geometry.getArea());
-                }
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
+          if(ev.getSource().getCursorTool()==null)
+           {
+               try {
+                   SimpleFeatureCollection simpleFeatureCollection = grabFeaturesInBoundingBox(ev);
+                   SimpleFeatureIterator features = simpleFeatureCollection.features();
+
+                   while (features.hasNext()) {
+                       SimpleFeature fa = features.next();
+                       Geometry geometry = (Geometry) fa.getDefaultGeometry();
+                       System.out.println(fa.getName());
+                       if (fa.getName().toString().equals("BEAT"))
+                       {
+                           int col_index = view.mapPanel.table.getColumn("BEAT_N").getModelIndex();
+                           int index = -1;
+                           for (int i = 0; i < model.getTableModel().getRowCount(); i++) {
+                               if (view.mapPanel.table.getValueAt(i, col_index) != null) {
+                                   String temp = view.mapPanel.table.getValueAt(i, col_index).toString();
+                                   if (temp.equalsIgnoreCase(fa.getAttribute("BEAT_N").toString())) {
+                                       index = i;
+                                       break;
+                                   }
+                               }
+                           }
+                           if (index >= 0)
+                               view.mapPanel.table.changeSelection(index, col_index, false, false);
+                       }
+                   }
+               } catch (Exception e) {
+                   e.printStackTrace();
+               }
+           }
         }
 
         @Override

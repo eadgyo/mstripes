@@ -203,7 +203,6 @@ public class Model
             e.printStackTrace();
         }
 
-
     }
 
     public Layer loadMap() {
