@@ -5,23 +5,23 @@ import org.geotools.data.FeatureSource;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.factory.CommonFactoryFinder;
-import org.geotools.feature.DefaultFeatureCollection;
-import org.geotools.feature.FeatureIterator;
-import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.geometry.jts.ReferencedEnvelope;
+import org.geotools.map.FeatureLayer;
 import org.geotools.map.Layer;
-import org.geotools.swing.JMapFrame;
+import org.geotools.map.MapContent;
+import org.geotools.styling.Style;
 import org.geotools.swing.event.MapMouseEvent;
 import org.geotools.swing.event.MapMouseListener;
-import org.opengis.feature.Feature;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.type.FeatureType;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
+import org.opengis.filter.identity.FeatureId;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.upes.Constants;
 import org.upes.model.Model;
 import org.upes.model.MyTableModel;
+import org.upes.model.RuleEntry;
 import org.upes.view.MapPanel;
 import org.upes.view.View;
 
@@ -30,13 +30,11 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.table.TableColumn;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
+import java.util.*;
 import java.util.List;
 
 
@@ -53,9 +51,9 @@ public class Controller
     private AddAction addAction = new AddAction();
     private OkAction okAction = new OkAction();
     private  DeleteAction deleteAction= new DeleteAction();
-    private MulAction mulAction = new MulAction();
 
     private MyTableListener tableListener = new MyTableListener();
+
 
     public Controller(View view, Model model)
     {
@@ -68,7 +66,6 @@ public class Controller
         mapPanel.addButton.setAction(addAction);
         view.layerDialog.okButton.setAction(okAction);
         mapPanel.deleteButton.setAction(deleteAction);
-        mapPanel.multiplyButton.setAction(mulAction);
 
         addAction.setEnabled(false);
         deleteAction.setEnabled(false);
@@ -110,7 +107,6 @@ public class Controller
                 return;
 
             mapPanel.mapPane.setMapContent(null);
-
             try
             {
                 model.loadFile(sourceFile);
@@ -124,45 +120,9 @@ public class Controller
 
             model.setInitPath(sourceFile.getParent());
             mapPanel.mapPane.setMapContent(model.getMap());
-            mapPanel.mapPane.repaint();
 
-        }
-    }
+            repaint();
 
-    private class MulAction extends AbstractAction {
-        public MulAction() {
-            super(Constants.NAME_MUL);
-            this.putValue(SHORT_DESCRIPTION, Constants.DESC_MUL);
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent actionEvent)
-        {
-            // Ask for the multiply factor
-            String s = JOptionPane.showInputDialog(Constants.QUESTION_MUL, 2);
-            if (s == null || s.equals(""))
-                return;
-
-            double d = 0;
-
-            // Try to convert string to number
-            try
-            {
-                d = Double.parseDouble(s);
-            }
-            catch(NumberFormatException nfe)
-            {
-                return;
-            }
-
-            // Get selected rows
-            int selectedColumn = mapPanel.table.getSelectedColumn();
-            int[] selectedRows = mapPanel.table.getSelectedRows();
-
-            for (int selectedRow : selectedRows)
-            {
-                model.multiplyColumn(d, selectedRow, selectedColumn);
-            }
         }
     }
 
@@ -204,7 +164,6 @@ public class Controller
                 if(mapPanel.toolBar.getComponentAtIndex(i).getClass().equals(JButton.class))
                     mapPanel.toolBar.getComponentAtIndex(i).setEnabled(true);
             }
-            mapPanel.mapPane.setMapContent(model.getMap());
 
             mapPanel.mapPane.repaint();
         }
@@ -243,18 +202,18 @@ public class Controller
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            List<Layer> oldLayers = new ArrayList<>(model.getMap().layers());
+            List<Layer> oldLayers = new ArrayList<>(getMap().layers());
 
             view.layerDialog.setVisible(true);
             okAction.actionPerformed(e);
 
             // Get all removed layers
-            List<Layer> layers = model.getMap().layers();
+            List<Layer> layers = getMap().layers();
             for (Layer oldLayer : oldLayers)
             {
                 if (!layers.contains(oldLayer))
                 {
-                    model.removeLayer(oldLayer.getTitle());
+                    model.removeLayer(oldLayer);
                 }
             }
         }
@@ -264,9 +223,10 @@ public class Controller
     {
 
         SimpleFeatureCollection grabFeaturesInBoundingBox(MapMouseEvent ev)
-                throws Exception {
+                throws Exception
+        {
             FilterFactory2 ff     = CommonFactoryFinder.getFilterFactory2();
-            Layer beatLayer = getBeatLayer();
+            Layer beatLayer = model.getLayer("BEAT");
             if (beatLayer==null)
                 return null ;
 
@@ -287,7 +247,6 @@ public class Controller
         @Override
         public void onMouseClicked(MapMouseEvent mapMouseEvent)
         {
-
         }
 
         @Override
@@ -331,12 +290,20 @@ public class Controller
                        if (fa.getName().toString().equals("BEAT"))
                        {
                            int col_index = view.mapPanel.table.getColumn("BEAT_N").getModelIndex();
+                           MyTableModel tableModel = (MyTableModel) model.getTableModel();
                            int index = -1;
-                           for (int i = 0; i < model.getTableModel().getRowCount(); i++) {
-                               if (view.mapPanel.table.getValueAt(i, col_index) != null) {
-                                   String temp = view.mapPanel.table.getValueAt(i, col_index).toString();
-                                   if (temp.equalsIgnoreCase(fa.getAttribute("BEAT_N").toString())) {
-                                       index = i;
+
+                           int startIndex = tableModel.getLayerStartIndex("BEAT");
+                           int endIndex       = tableModel.getLayerEndIndex("BEAT");
+
+                           for (int row = startIndex; row < endIndex; row++)
+                           {
+                               if (tableModel.getValueAt(row, col_index) != null)
+                               {
+                                   String temp = tableModel.getValueAt(row, col_index).toString();
+                                   if (temp.equalsIgnoreCase(fa.getAttribute("BEAT_N").toString()))
+                                   {
+                                       index = row;
                                        break;
                                    }
                                }
@@ -348,6 +315,7 @@ public class Controller
                } catch (Exception e) {
                    e.printStackTrace();
                }
+               repaint();
            }
         }
 
@@ -366,95 +334,21 @@ public class Controller
 
     public class MyTableListener implements ListSelectionListener
     {
-
         @Override
         public void valueChanged(ListSelectionEvent listSelectionEvent)
         {
-            updateSelectedLayers();
-            mapPanel.mapPane.setMapContent(null);
-            mapPanel.mapPane.setMapContent(model.getMap());
-            mapPanel.mapPane.repaint();
-        }
-    }
-
-    /**
-     * Quick search using row index
-     * @param layer used layer
-     * @param rowIndex row relative to start of feature
-     * @return row index
-     */
-    private Feature findFeatureFast(Layer layer, int rowIndex)
-    {
-        FeatureIterator<?> features = null;
-        try
-        {
-            features = layer.getFeatureSource().getFeatures().features();
-            for (int i = 0; i < rowIndex - 1; i++)
+            if (!listSelectionEvent.getValueIsAdjusting())
             {
-                features.next();
-            }
-            return features.next();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    private Feature findFeature(Layer layer, String attributeName, String searchAttribute)
-    {
-        try
-        {
-            FeatureIterator<?> features = layer.getFeatureSource().getFeatures().features();
-            while (features.hasNext())
-            {
-                SimpleFeature next = (SimpleFeature) features.next();
-                Object        attribute = next.getAttribute(attributeName);
-
-                if (attribute != null && attribute.equals(searchAttribute))
-                    return next;
+                updateSelectedLayers();
             }
         }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-        return null;
     }
 
-    private Layer getBeatLayer()
+
+
+    public void updateSelectedLayers()
     {
-        Iterator<Layer> iterator = mapPanel.mapPane.getMapContent()
-                                                   .layers()
-                                                   .iterator();
-        while (iterator.hasNext())
-        {
-            Layer next = iterator.next();
-            if (next.getTitle().equals("BEAT"))
-                return next;
-        }
-
-        return null;
-    }
-
-    private void removeLayer(Layer layer)
-    {
-        if (model.getMap().layers().contains(layer))
-            model.getMap().removeLayer(layer);
-
-    }
-
-    private void addLayer(Layer layer)
-    {
-        if (!model.getMap().layers().contains(layer))
-            model.getMap().addLayer(layer);
-
-    }
-
-    private void updateSelectedLayers()
-    {
-        Layer        beatLayer    = getBeatLayer();
+        Layer        beatLayer    = model.getLayer("BEAT");
         if (beatLayer == null)
             return;
 
@@ -466,44 +360,46 @@ public class Controller
 
         for (int selectedRow : selectedRows)
         {
-            Object valueAt = tableModel.getValueAt(selectedRow, column);
-            Layer                    layerSelection = model.getLayerSelection();
-            DefaultFeatureCollection featureSource  = null;
-            featureSource = model.getFeatureCollection();
+            Object         valueAt          = tableModel.getValueAt(selectedRow, column);
+            Set<FeatureId> selectedFeatures = new HashSet<>();
 
-            try
+            // If it's a row from beat layer
+            if (selectedRow >= startBeat && selectedRow < endBeat)
             {
-                // If it's a row from beat layer
-                if (selectedRow >= startBeat && selectedRow < endBeat)
-                {
-                    // Get layer feature
-                    SimpleFeature featureFast = (SimpleFeature) findFeatureFast(beatLayer, selectedRow - startBeat);
-                    featureFast = (SimpleFeature) findFeature(beatLayer, "BEAT_N", (String) valueAt);
+                // Get layer feature
+                SimpleFeature featureFast = (SimpleFeature) model.findFeature(beatLayer, "BEAT_N", (String) valueAt);
 
-                    // Remove feature
-                    featureSource.clear();
-
-                    // Add feature to this layer
-                    SimpleFeatureBuilder     featureBuilder = new SimpleFeatureBuilder(featureFast.getFeatureType());
-                    featureBuilder.add(featureFast.getDefaultGeometry());
-
-                    int count = featureSource.getCount();
-                    featureSource.add(featureBuilder.buildFeature("Selection" + count));
-                }
-
-                if (featureSource.getCount() != 0)
-                {
-                    addLayer(layerSelection);
-                }
-
-
-                //mapPanel.mapPane.getRenderer().in
+                // Change color of this feature
+                selectedFeatures.add(featureFast.getIdentifier());
             }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
-
+            String geometryAttributeName = beatLayer.getFeatureSource().getSchema().getGeometryDescriptor().getLocalName();
+            displaySelectedFeatures(beatLayer, selectedFeatures, geometryAttributeName);
         }
+    }
+
+    public void displaySelectedFeatures(Layer layer, Set<FeatureId> IDs, String geometryAttributeName)
+    {
+        Style style;
+
+        RuleEntry defaultEntry = new RuleEntry(Color.BLACK, Color.LIGHT_GRAY, 1.0);
+        RuleEntry selectedEntry = new RuleEntry(Color.BLACK, Color.RED, 1.2);
+
+        if (IDs.isEmpty())
+            style = model.createDefaultStyle(defaultEntry, geometryAttributeName);
+        else
+            style = model.createSelectedStyle(defaultEntry, selectedEntry, IDs, geometryAttributeName);
+
+        ((FeatureLayer) layer).setStyle(style);
+        repaint();
+    }
+
+    public void repaint()
+    {
+        mapPanel.mapPane.repaint();
+    }
+
+    public MapContent getMap()
+    {
+        return mapPanel.mapPane.getMapContent();
     }
 }
