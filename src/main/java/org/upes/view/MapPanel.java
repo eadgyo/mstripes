@@ -16,6 +16,7 @@ import java.util.Set;
 public class MapPanel extends JPanel
 {
     public JPanel leftPart = new JPanel(new BorderLayout());
+    public ClassificationView classificationView = new ClassificationView();
     public JPanel middlePart = new JPanel(new BorderLayout());
     public JPanel rightPart = new JPanel();
 
@@ -39,6 +40,7 @@ public class MapPanel extends JPanel
         buttonsPanel.setLayout(new FlowLayout(FlowLayout.CENTER,12,90));
         buttonsPanel.add(loadButton);
         leftPart.add(buttonsPanel, BorderLayout.NORTH);
+        leftPart.add(classificationView, BorderLayout.CENTER);
         leftPart.add(scrollTable, BorderLayout.SOUTH);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
