@@ -41,6 +41,9 @@ public class SimpleModel
     protected MyTableModel        tableModel;
 
     protected String initPath = PersonalConstants.INIT_PATH;
+
+
+    protected Classification classification;
     protected MyStyleFactory               myStyleFactory;
 
     protected StyleFactory   sf = CommonFactoryFinder.getStyleFactory();
@@ -51,6 +54,11 @@ public class SimpleModel
         map = new MapContent();
         tableModel = new MyTableModel();
         myStyleFactory=new MyStyleFactory();
+    }
+
+    public Classification getClassification()
+    {
+        return classification;
     }
 
     public StyleFactory getSf()
@@ -113,7 +121,7 @@ public class SimpleModel
         return tableModel;
     }
 
-    public void loadFile(File sourceFile) throws IOException
+    public Layer loadFile(File sourceFile) throws IOException
     {
         this.sourceFile = sourceFile;
 
@@ -132,6 +140,8 @@ public class SimpleModel
             // Load the dbf file
             loadDbf(addedLayer);
         }
+
+        return addedLayer;
     }
 
     public void checkLayer(Layer addedLayer)
