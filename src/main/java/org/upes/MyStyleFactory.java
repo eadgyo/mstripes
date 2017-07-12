@@ -117,6 +117,7 @@ public class MyStyleFactory {
                 style=getStyle(ftype,pointLayers.get(Constants.WIRELESS_STATION));
             break;
             default:
+                style=SLD.createSimpleStyle(ftype);
                 System.out.println("Unregistered File!");
         }
 
