@@ -118,9 +118,10 @@ public class Controller
                 return;
             }
 
+            view.optionsDialog.setVisible(true);
+
             model.setInitPath(sourceFile.getParent());
             mapPanel.mapPane.setMapContent(model.getMap());
-
             repaint();
 
         }

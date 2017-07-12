@@ -29,6 +29,11 @@ public interface Constants
 
     Dimension MIN_MAP_DIMENSION_SIZE = new Dimension(400, 300);
 
+    String OPTIONS_QUESTION="The added layer is:";
+    String COOPERATIVE="Co-operative";
+    String DEFECTIVE="Defective";
+    String SUPPORTIVE="Supportive";
+
     // Image locations
     String IMAGE_UPES_PATH = "upes.png";
     String IMAGE_WILDLIFE_PATH = "wiilogo.gif";

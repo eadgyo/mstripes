@@ -154,27 +154,27 @@ public class Model extends SimpleModel
 
                     if (beatGeometry.intersects(lineGeometry))
                     {
-                        SimpleFeatureType TYPE = DataUtilities.createType("roads", "line", "the_geom:MultiLineString");
-                        SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder((SimpleFeatureType) TYPE);
+//                        SimpleFeatureType TYPE = DataUtilities.createType("roads", "line", "the_geom:MultiLineString");
+//                        SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder((SimpleFeatureType) TYPE);
                         Geometry intersection = lineGeometry.intersection(beatGeometry);
-                        featureBuilder.add(intersection);
-                        SimpleFeature feature = featureBuilder.buildFeature(next.getID()+"line"+id);
+ //                       featureBuilder.add(intersection);
+  //                      SimpleFeature feature = featureBuilder.buildFeature(next.getID()+"line"+id);
                         id++;
                         lineLength+=intersection.getLength();
-                        fcollect.add(feature);
+  //                      fcollect.add(feature);
                     }
                 }
                 currBeat.setRoadLength(lineLength);
 
-                if(!fcollect.isEmpty())
-                { count++;
-                Style st= SLD.createLineStyle(Color.getHSBColor((count*2)%360,(count+10),(count)%100),3);
-                newLayer=new FeatureLayer(fcollect,st,"newLayer"+count);
-
-                        map.layers().add(newLayer);
-
-
-                }
+//                if(!fcollect.isEmpty())
+//                { count++;
+//                Style st= SLD.createLineStyle(Color.getHSBColor((count*2)%360,(count+10),(count)%100),3);
+//                newLayer=new FeatureLayer(fcollect,st,"newLayer"+count);
+//
+//                        map.layers().add(newLayer);
+//
+//
+//                }
                 linefeatures.close();
                 beats.add(currBeat);
             }
@@ -183,8 +183,6 @@ public class Model extends SimpleModel
         } catch (FactoryException e) {
             e.printStackTrace();
         } catch (TransformException e) {
-            e.printStackTrace();
-        } catch (SchemaException e) {
             e.printStackTrace();
         } finally
         {

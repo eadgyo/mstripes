@@ -1,5 +1,6 @@
 package org.upes.view;
 
+import org.geotools.image.ImageWorker;
 import org.upes.Constants;
 
 import javax.swing.*;
@@ -17,6 +18,8 @@ public class View extends JFrame
     public MapPanel     mapPanel     = new MapPanel();
     public LoadingPanel loadingPanel = new LoadingPanel();
 
+    public OptionsDialog optionsDialog=new OptionsDialog(this);
+
     public View()
     {
         // Set the frame
@@ -31,6 +34,8 @@ public class View extends JFrame
         mainPanel.setLayout(card);
         mainPanel.add("a", loadingPanel);
         mainPanel.add("b", mapPanel);
+
+
     }
 
 
