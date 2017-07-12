@@ -36,6 +36,7 @@ import java.util.Vector;
 public class Model extends SimpleModel
 {
 
+
     @Override
     public void checkLayer(Layer addedLayer)
     {

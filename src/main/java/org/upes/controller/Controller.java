@@ -19,6 +19,7 @@ import org.opengis.filter.FilterFactory2;
 import org.opengis.filter.identity.FeatureId;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.upes.Constants;
+import org.upes.model.Classification;
 import org.upes.model.Model;
 import org.upes.model.MyTableModel;
 import org.upes.model.RuleEntry;
@@ -47,10 +48,10 @@ public class Controller
     private MapPanel mapPanel;
     private Model    model;
 
-    private LoadAction loadAction = new LoadAction();
-    private AddAction addAction = new AddAction();
-    private OkAction okAction = new OkAction();
-    private  DeleteAction deleteAction= new DeleteAction();
+    private LoadAction    loadAction    = new LoadAction();
+    private AddAction     addAction     = new AddAction();
+    private OkLayerAction okLayerAction = new OkLayerAction();
+    private DeleteAction  deleteAction  = new DeleteAction();
 
     private MyTableListener tableListener = new MyTableListener();
 
@@ -64,7 +65,7 @@ public class Controller
         // Set actions
         mapPanel.loadButton.setAction(loadAction);
         mapPanel.addButton.setAction(addAction);
-        view.layerDialog.okButton.setAction(okAction);
+        view.layerDialog.okButton.setAction(okLayerAction);
         mapPanel.deleteButton.setAction(deleteAction);
 
         addAction.setEnabled(false);
@@ -107,9 +108,10 @@ public class Controller
                 return;
 
             mapPanel.mapPane.setMapContent(null);
+            Layer layer = null;
             try
             {
-                model.loadFile(sourceFile);
+                Layer layer = model.loadFile(sourceFile);
             }
             catch (IOException e)
             {
@@ -119,6 +121,22 @@ public class Controller
             }
 
             view.optionsDialog.setVisible(true);
+
+            int            selectedOption = view.optionsDialog.getSelectedOption();
+            Classification classification = model.getClassification();
+
+            if (selectedOption == 0)
+            {
+                classification.addCooperative(layer);
+            }
+            else if (selectedOption == 1)
+            {
+                classification.addDefective(layer);
+            }
+            else
+            {
+                classification.addSupportive(layer);
+            }
 
             model.setInitPath(sourceFile.getParent());
             mapPanel.mapPane.setMapContent(model.getMap());
@@ -170,8 +188,8 @@ public class Controller
         }
     }
 
-    private class OkAction extends AbstractAction {
-        public OkAction() {
+    private class OkLayerAction extends AbstractAction {
+        public OkLayerAction() {
             super(Constants.NAME_OK_DIALOG);
         }
 
@@ -194,6 +212,19 @@ public class Controller
         }
     }
 
+    private class OkClassificationAction extends AbstractAction {
+        public OkClassificationAction()
+        {
+            super(Constants.NAME_OK_DIALOG);
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent actionEvent)
+        {
+            view.optionsDialog.setVisible(false);
+        }
+    }
+
     private  class DeleteAction extends AbstractAction
     {
         public DeleteAction() {
@@ -206,7 +237,7 @@ public class Controller
             List<Layer> oldLayers = new ArrayList<>(getMap().layers());
 
             view.layerDialog.setVisible(true);
-            okAction.actionPerformed(e);
+            okLayerAction.actionPerformed(e);
 
             // Get all removed layers
             List<Layer> layers = getMap().layers();
