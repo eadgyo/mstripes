@@ -42,8 +42,15 @@ public class OptionsDialog extends JDialog {
         this.pack();
     }
 
-    public String getSelectedOption()
+    public int getSelectedOption()
     {
-        return null;
+        if (supportive.isSelected())
+            return 3;
+        else if (cooperative.isSelected())
+            return 1;
+        else if (defective.isSelected())
+            return 2;
+
+        return 0;
     }
 }

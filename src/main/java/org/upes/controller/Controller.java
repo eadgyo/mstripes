@@ -119,6 +119,7 @@ public class Controller
             }
 
             view.optionsDialog.setVisible(true);
+            System.out.println(view.optionsDialog.getSelectedOption());
 
             model.setInitPath(sourceFile.getParent());
             mapPanel.mapPane.setMapContent(model.getMap());

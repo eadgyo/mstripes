@@ -37,7 +37,7 @@ public class MapPanel extends JPanel
         this.setLayout(new BorderLayout());
         // Left part
         JPanel buttonsPanel = new JPanel();
-        buttonsPanel.setLayout(new FlowLayout(FlowLayout.CENTER,12,90));
+        buttonsPanel.setLayout(new FlowLayout(FlowLayout.CENTER,12,80));
         buttonsPanel.add(loadButton);
         leftPart.add(buttonsPanel, BorderLayout.NORTH);
         leftPart.add(classificationView, BorderLayout.CENTER);
