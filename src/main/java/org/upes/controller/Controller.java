@@ -52,7 +52,7 @@ public class Controller
     private AddAction     addAction     = new AddAction();
     private OkLayerAction okLayerAction = new OkLayerAction();
     private DeleteAction  deleteAction  = new DeleteAction();
-
+    private OkClassificationAction okClassification =new OkClassificationAction();
     private MyTableListener tableListener = new MyTableListener();
 
 
@@ -67,6 +67,7 @@ public class Controller
         mapPanel.addButton.setAction(addAction);
         view.layerDialog.okButton.setAction(okLayerAction);
         mapPanel.deleteButton.setAction(deleteAction);
+        view.optionsDialog.ok.setAction(okClassification);
 
         addAction.setEnabled(false);
         deleteAction.setEnabled(false);
@@ -82,6 +83,11 @@ public class Controller
 
         // Link Table
         view.mapPanel.table.setModel(model.getTableModel());
+
+        Classification classification = model.getClassification();
+        view.mapPanel.classificationView.cooperativeList.setModel(classification.getCooperative());
+        view.mapPanel.classificationView.supportiveList.setModel(classification.getSupportive());
+        view.mapPanel.classificationView.defectiveList.setModel(classification.getDefective());
 
         // Add listener
         mapPanel.mapPane.addMouseListener(new MouseMapListener());
@@ -111,7 +117,7 @@ public class Controller
             Layer layer = null;
             try
             {
-                Layer layer = model.loadFile(sourceFile);
+                layer = model.loadFile(sourceFile);
             }
             catch (IOException e)
             {
@@ -126,11 +132,11 @@ public class Controller
             int            selectedOption = view.optionsDialog.getSelectedOption();
             Classification classification = model.getClassification();
 
-            if (selectedOption == 0)
+            if (selectedOption == 1)
             {
                 classification.addCooperative(layer);
             }
-            else if (selectedOption == 1)
+            else if (selectedOption == 2)
             {
                 classification.addDefective(layer);
             }

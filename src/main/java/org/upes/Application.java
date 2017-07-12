@@ -25,7 +25,9 @@ public class Application
         model = new Model();
         controller = new Controller(view, model);
 
+        view.optionsDialog.pack();
         launchApp();
+
     }
 
     public static void main(String[] args)

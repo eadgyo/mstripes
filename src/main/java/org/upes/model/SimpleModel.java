@@ -43,7 +43,7 @@ public class SimpleModel
     protected String initPath = PersonalConstants.INIT_PATH;
 
 
-    protected Classification classification;
+    protected Classification classification= new Classification();
     protected MyStyleFactory               myStyleFactory;
 
     protected StyleFactory   sf = CommonFactoryFinder.getStyleFactory();

@@ -39,7 +39,7 @@ public class OptionsDialog extends JDialog {
         ok.setAlignmentX(Box.CENTER_ALIGNMENT);
         panel.add(ok);
         add(panel);
-        this.pack();
+
     }
 
     public int getSelectedOption()
