@@ -21,18 +21,9 @@ public interface Constants
     String NAME_DEL_MAP="Customize";
     String DESC_DEL_MAP="Customize layers from map";
 
-    String NAME_MUL = "Multiply";
-    String DESC_MUL = "Multiply selected rows and column by a factor";
-
-    String QUESTION_MUL = "Multiply factor";
-
     String NAME_OK_DIALOG = "OK";
 
     String TITLE_NOT_VALID_SHP = "Error ShapeFile";
-    String MESSAGE_NOT_VALID_SHP = "Not a valid Shape File";
-
-    String TITLE_NOT_VALID_TABLE = "Error DBX";
-    String MESSAGE_NOT_VALID_TABLE = "Not valid DBX file";
 
     Dimension MIN_LAYERS_DIMENSION_SIZE = new Dimension(400, 300);
 

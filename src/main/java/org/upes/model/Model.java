@@ -1,13 +1,9 @@
 package org.upes.model;
 
 import com.vividsolutions.jts.geom.Geometry;
-import org.geotools.coverage.grid.io.AbstractGridCoverage2DReader;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.FeatureSource;
-import org.geotools.data.FileDataStore;
-import org.geotools.data.FileDataStoreFinder;
 import org.geotools.data.simple.SimpleFeatureIterator;
-import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
@@ -17,27 +13,18 @@ import org.geotools.filter.AreaFunction;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.map.FeatureLayer;
 import org.geotools.map.Layer;
-import org.geotools.map.MapContent;
 import org.geotools.referencing.CRS;
 import org.geotools.styling.SLD;
 import org.geotools.styling.Style;
-import org.geotools.styling.StyleFactory;
-import org.geotools.styling.StyleFactoryImpl;
-import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
-import org.opengis.feature.type.PropertyType;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
 import org.upes.Constants;
-import org.upes.MyStyleFactory;
-import org.upes.PersonalConstants;
 
-import javax.swing.table.TableModel;
 import java.awt.*;
-import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -46,95 +33,21 @@ import java.util.Vector;
 /**
  * Created by eadgyo on 27/06/17.
  */
-public class Model
+public class Model extends SimpleModel
 {
-    private File                sourceFile;
-    private SimpleFeatureSource featureSource;
-    private MapContent          map;
-    private MyTableModel        tableModel;
 
-    private String initPath = PersonalConstants.INIT_PATH;
-    private MyStyleFactory               myStyleFactory;
-    private AbstractGridCoverage2DReader reader;
-    private StyleFactory sf = new StyleFactoryImpl();
-
-    private Layer layerRoad = null;
-    private Layer selectedFeatures = null;
-    private DefaultFeatureCollection featureCollection = new DefaultFeatureCollection();
-
-    public Model()
+    @Override
+    public void checkLayer(Layer addedLayer)
     {
-        map = new MapContent();
-        tableModel = new MyTableModel();
-        myStyleFactory=new MyStyleFactory();
-    }
-    public void loadFile(File sourceFile) throws IOException
-    {
-        this.sourceFile = sourceFile;
-
-        // Create the factory
-        FileDataStore store = FileDataStoreFinder.getDataStore(sourceFile);
-        featureSource = store.getFeatureSource();
-
-        // Add the first layer to map
-        Layer addedLayer = loadMap();
-
-        // Compute road length if available
-        if (addedLayer != null)
-        {
-            checkLayerBeat(addedLayer);
-            checkLayerRoad(addedLayer);
-            updateRoadLength(addedLayer);
-
-            // Load the dbf file
-            loadDbf(addedLayer);
-        }
+        checkLayerRoad(addedLayer);
+        updateRoadLength(addedLayer, null);
     }
 
-    public String getInitPath()
-    {
-        return initPath;
-    }
-
-    public void setInitPath(String path)
-    {
-        if(!path.isEmpty())
-        initPath=path;
-    }
-
-    public void checkLayerBeat(Layer beatLayer)
-    {
-        if (!beatLayer.getTitle().equals("BEAT"))
-            return;
-
-        try
-        {
-            Style style = SLD.createSimpleStyle(beatLayer.getFeatureSource().getFeatures().features().next().getType
-                    (), Color.RED);
-            selectedFeatures = new FeatureLayer(featureCollection, style, "Selection");
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-    }
-
-    public DefaultFeatureCollection getFeatureCollection()
-    {
-        return featureCollection;
-    }
-
-    public Layer getLayerSelection()
-    {
-        return selectedFeatures;
-    }
 
     public void checkLayerRoad(Layer testedLayer)
     {
         if (featureSource.getSchema().getTypeName().equalsIgnoreCase(Constants.ROAD_NAME_FILE))
         {
-            layerRoad = testedLayer;
-
             // Add column
             tableModel.addColumn("RoadLength");
 
@@ -142,7 +55,7 @@ public class Model
             java.util.List<Layer> layers = map.layers();
             for (Layer layer : layers)
             {
-                updateRoadLength(layer);
+                updateRoadLength(layer, testedLayer);
             }
         }
     }
@@ -171,8 +84,11 @@ public class Model
         return false;
     }
 
-    public void updateRoadLength(Layer addedLayer)
+    public void updateRoadLength(Layer addedLayer, Layer layerRoad)
     {
+        if (layerRoad == null)
+            layerRoad = getLayer(Constants.ROAD_NAME_FILE);
+
         if (layerRoad == null || addedLayer == layerRoad || !isRoadLengthNecessary(addedLayer))
             return;
 
@@ -203,110 +119,6 @@ public class Model
             e.printStackTrace();
         }
 
-    }
-
-    public Layer loadMap() {
-
-        Style style=myStyleFactory.setStyle(featureSource.getSchema());
-
-        SimpleFeatureIterator features = null;
-        try {
-            features = featureSource.getFeatures().features();
-            DefaultFeatureCollection featureColl = new DefaultFeatureCollection();
-            SimpleFeature next = null;
-            while (features.hasNext()) {
-                next = features.next();
-                Geometry geometry = (Geometry) next.getDefaultGeometry();
-                if (geometry != null && geometry.isValid()) {
-
-                    featureColl.add(next);
-                }
-            }
-            Layer layer = new FeatureLayer(featureColl, style, next.getName().toString());
-            map.layers().add(layer);
-
-            return layer;
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            features.close();
-        }
-        return null;
-    }
-
-    public void loadDbf(Layer addedLayer) throws IOException
-    {
-        FeatureCollection<SimpleFeatureType, SimpleFeature> collection = (FeatureCollection<SimpleFeatureType,
-                SimpleFeature>) addedLayer.getFeatureSource().getFeatures();
-        try (FeatureIterator<SimpleFeature> features = collection.features()) {
-
-            while (features.hasNext())
-            {
-                SimpleFeature feature = features.next();
-                Vector vector = new Vector<>();
-                for (Property attribute : feature.getProperties())
-                {
-                    if (isValidInfo(attribute.getType()))
-                    {
-                        int columnRow = tableModel.addColumnIfNeeded(attribute.getName().toString());
-                        while (columnRow >= vector.size())
-                        {
-                            vector.add("");
-                        }
-                        vector.set(columnRow, attribute.getValue());
-                    }
-                }
-                tableModel.addRow(feature.getName().toString(), vector);
-            }
-        }
-    }
-
-    public boolean isValidInfo(PropertyType propertyType)
-    {
-        Class<?> binding = propertyType.getBinding();
-        if (propertyType.getName().equals("the_geom"))
-            return false;
-        return true;
-    }
-
-    public MapContent getMap()
-    {
-        return map;
-    }
-
-    public TableModel getTableModel()
-    {
-        return tableModel;
-    }
-
-    public void removeLayer(String layerName)
-    {
-        tableModel.removeLayer(layerName);
-    }
-
-    // method for calculating area
-    public void calculate_area(SimpleFeatureSource sf)
-    {
-        SimpleFeatureIterator features = null;
-
-        try {
-            features=sf.getFeatures().features();
-            AreaFunction areaFunction=new AreaFunction();
-            SimpleFeature next = null;
-
-            while(features.hasNext())
-            {
-                next=features.next();
-                Geometry geometry=(Geometry) next.getDefaultGeometry();
-           //     System.out.println(areaFunction.getArea(geometry));
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        finally {
-            features.close();
-        }
     }
 
     public LinkedList<Beat> calculate_road_length(Layer roadLayer, Layer layer)
@@ -383,7 +195,7 @@ public class Model
         return beats;
     }
 
-    public void computeArea(Layer layer)
+    public void calculate_area(Layer layer)
     {
         FeatureLayer             layer1     = (FeatureLayer) layer;
         FeatureSource<?, ?>      featureSource = layer.getFeatureSource();
@@ -406,8 +218,6 @@ public class Model
         }
     }
 
-    public void multiplyColumn(Number factor, int row, int column)
-    {
-        tableModel.multiplyColumn(factor, row, column);
-    }
+
 }
+
