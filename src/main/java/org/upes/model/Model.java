@@ -171,7 +171,7 @@ public class Model extends SimpleModel
                 Style st= SLD.createLineStyle(Color.getHSBColor((count*2)%360,(count+10),(count)%100),3);
                 newLayer=new FeatureLayer(fcollect,st,"newLayer"+count);
 
-                        map.layers().add(newLayer);
+                        map.addLayer(newLayer);
 
 
                 }
