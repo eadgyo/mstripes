@@ -85,7 +85,7 @@ public class Controller
         view.mapPanel.table.setModel(model.getTableModel());
 
         Classification classification = model.getClassification();
-        view.mapPanel.classificationView.cooperativeList.setModel(classification.getNeutral());
+        view.mapPanel.classificationView.neutralList.setModel(classification.getNeutral());
         view.mapPanel.classificationView.supportiveList.setModel(classification.getSupportive());
         view.mapPanel.classificationView.defectiveList.setModel(classification.getDefective());
 

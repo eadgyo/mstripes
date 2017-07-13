@@ -30,7 +30,7 @@ public interface Constants
     Dimension MIN_MAP_DIMENSION_SIZE = new Dimension(400, 300);
 
     String OPTIONS_QUESTION="The added layer is:";
-    String StrCOOPERATIVE="Neutral";
+    String StrNEUTRAL ="Neutral";
     String StrDEFECTIVE="Defective";
     String StrSUPPORTIVE="Supportive";
     String StrNONE="None";

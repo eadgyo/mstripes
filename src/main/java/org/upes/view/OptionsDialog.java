@@ -13,7 +13,7 @@ public class OptionsDialog extends JDialog {
     public JButton ok = new JButton();
     public JPanel panel = new JPanel();
     JLabel heading=new JLabel(Constants.OPTIONS_QUESTION);
-    JRadioButton neutral=new JRadioButton(Constants.StrCOOPERATIVE);
+    JRadioButton neutral=new JRadioButton(Constants.StrNEUTRAL);
     JRadioButton defective=new JRadioButton(Constants.StrDEFECTIVE);
     JRadioButton supportive=new JRadioButton(Constants.StrSUPPORTIVE);
     JRadioButton none=new JRadioButton(Constants.StrNONE);
@@ -44,7 +44,6 @@ public class OptionsDialog extends JDialog {
         ok.setAlignmentX(Box.CENTER_ALIGNMENT);
         panel.add(ok);
         add(panel);
-
     }
 
     public int getSelectedOption()
