@@ -135,10 +135,10 @@ public class SimpleModel
         // Compute road length if available
         if (addedLayer != null)
         {
-            checkLayer(addedLayer);
-
             // Load the dbf file
             loadDbf(addedLayer);
+
+            checkLayer(addedLayer);
         }
 
         return addedLayer;
@@ -299,5 +299,21 @@ public class SimpleModel
         Style style = sf.createStyle();
         style.featureTypeStyles().add(fts);
         return style;
+    }
+
+    public void addToClassification(int selectedOption, Layer layer)
+    {
+        if (selectedOption == 1)
+        {
+            classification.addSupportive(layer);
+        }
+        else if (selectedOption == 2)
+        {
+            classification.addSupportive(layer);
+        }
+        else
+        {
+            classification.addDefective(layer);
+        }
     }
 }

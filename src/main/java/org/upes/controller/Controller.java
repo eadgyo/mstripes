@@ -113,7 +113,6 @@ public class Controller
             if (sourceFile == null)
                 return;
 
-            mapPanel.mapPane.setMapContent(null);
             Layer layer = null;
             try
             {
@@ -127,26 +126,10 @@ public class Controller
             }
 
             view.optionsDialog.setVisible(true);
-            System.out.println(view.optionsDialog.getSelectedOption());
 
             int            selectedOption = view.optionsDialog.getSelectedOption();
-            Classification classification = model.getClassification();
-
-            if (selectedOption == 1)
-            {
-                classification.addCooperative(layer);
-            }
-            else if (selectedOption == 2)
-            {
-                classification.addDefective(layer);
-            }
-            else
-            {
-                classification.addSupportive(layer);
-            }
-
+            model.addToClassification(selectedOption, layer);
             model.setInitPath(sourceFile.getParent());
-            mapPanel.mapPane.setMapContent(model.getMap());
             repaint();
 
         }
