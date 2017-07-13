@@ -21,6 +21,8 @@ public interface Constants
     String NAME_DEL_MAP="Customize";
     String DESC_DEL_MAP="Customize layers from map";
 
+    String NAME_CALC_INTERSECT="Calculate";
+    String DESC_CALC_INTERSECT="Calculate the area of occupancy of each layer";
     String NAME_OK_DIALOG = "OK";
 
     String TITLE_NOT_VALID_SHP = "Error ShapeFile";
@@ -30,9 +32,10 @@ public interface Constants
     Dimension MIN_MAP_DIMENSION_SIZE = new Dimension(400, 300);
 
     String OPTIONS_QUESTION="The added layer is:";
-    String StrCOOPERATIVE="Co-operative";
+    String StrNEUTRAL ="Neutral";
     String StrDEFECTIVE="Defective";
     String StrSUPPORTIVE="Supportive";
+    String StrNONE="None";
 
     // Image locations
     String IMAGE_UPES_PATH = "upes.png";
