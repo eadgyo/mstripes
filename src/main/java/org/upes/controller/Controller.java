@@ -54,7 +54,7 @@ public class Controller
     private DeleteAction  deleteAction  = new DeleteAction();
     private OkClassificationAction okClassification =new OkClassificationAction();
     private MyTableListener tableListener = new MyTableListener();
-
+    private CalcAction calcAction=new CalcAction();
 
     public Controller(View view, Model model)
     {
@@ -68,6 +68,7 @@ public class Controller
         view.layerDialog.okButton.setAction(okLayerAction);
         mapPanel.deleteButton.setAction(deleteAction);
         view.optionsDialog.ok.setAction(okClassification);
+        mapPanel.calculateButton.setAction(calcAction);
 
         addAction.setEnabled(false);
         deleteAction.setEnabled(false);
@@ -235,6 +236,19 @@ public class Controller
                     model.removeLayer(oldLayer);
                 }
             }
+        }
+    }
+
+    private class CalcAction extends AbstractAction
+    {
+        public CalcAction(){
+         super(Constants.NAME_CALC_INTERSECT);
+         this.putValue(SHORT_DESCRIPTION,Constants.DESC_CALC_INTERSECT);
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+
         }
     }
 
