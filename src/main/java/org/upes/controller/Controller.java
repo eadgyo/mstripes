@@ -248,7 +248,7 @@ public class Controller
 
         @Override
         public void actionPerformed(ActionEvent e) {
-
+            model.calculateForAll();
         }
     }
 

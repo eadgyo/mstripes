@@ -113,7 +113,7 @@ public class Model extends SimpleModel
                 Beat temp=beatIterator.next();
                 Object        statusValue = next.getAttribute("STATUS");
                 double status;
-                if (statusValue instanceof Double)
+                if (statusValue instanceof Integer)
                 {
                     double statusValueT = (Integer) statusValue;
                     statusValue = statusValueT;
@@ -208,11 +208,17 @@ public class Model extends SimpleModel
         while (iterator.hasNext())
         {
             Layer next = iterator.next();
-            LinkedList<Beat> calculate = calculate(next);
-            System.out.println(next.getTitle());
-            for (Beat beat : calculate)
+
+            System.out.println();
+            if(classification.getDefective().contains(next.getFeatureSource().getName().toString()) ||
+                    classification.getNeutral().contains(next.getFeatureSource().getName().toString()) ||
+                       classification.getSupportive().contains(next.getFeatureSource().getName().toString()))
             {
-                System.out.println("For ID" + beat.getId() + "  Value --> " + beat.getValue());
+                LinkedList<Beat> calculate = calculate(next);
+                System.out.println(next.getTitle());
+                for (Beat beat : calculate) {
+                    System.out.println("For ID" + beat.getId() + "  Value --> " + beat.getValue());
+                }
             }
         }
     }
@@ -240,7 +246,6 @@ public class Model extends SimpleModel
                 SimpleFeature next=simpleFeatureIterator.next();
                 Geometry beatGeometry= (Geometry) next.getDefaultGeometry();
                 linefeatures = (SimpleFeatureIterator) layer.getFeatureSource().getFeatures().features();
-                DefaultFeatureCollection fcollect=new DefaultFeatureCollection();
                 CoordinateReferenceSystem beatCRS = beatLayer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
                 CoordinateReferenceSystem lineCRS = layer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
                 MathTransform transform=null;
@@ -271,7 +276,6 @@ public class Model extends SimpleModel
                                 v+=1;
                                 break;
                         }
-
                     }
                 }
                 currBeat.setValue(v);
