@@ -1,5 +1,7 @@
 package org.upes.view;
 
+import org.upes.Constants;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -18,9 +20,9 @@ public class ClassificationView extends JPanel
         JScrollPane cooperativeScrollPane = new JScrollPane(cooperativeList);
         JScrollPane defectiveScrollPane = new JScrollPane(defectiveList);
 
-        JLabel supportiveLabel = new JLabel("Supportive");
-        JLabel cooperativeLabel = new JLabel("Cooperative");
-        JLabel defectiveLabel = new JLabel("Defective");
+        JLabel supportiveLabel = new JLabel(Constants.StrSUPPORTIVE);
+        JLabel cooperativeLabel = new JLabel(Constants.StrCOOPERATIVE);
+        JLabel defectiveLabel = new JLabel(Constants.StrDEFECTIVE);
 
         JPanel supportivePane = new JPanel();
         JPanel cooperativePane = new JPanel();

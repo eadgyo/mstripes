@@ -13,9 +13,10 @@ public class OptionsDialog extends JDialog {
     public JButton ok = new JButton();
     public JPanel panel = new JPanel();
     JLabel heading=new JLabel(Constants.OPTIONS_QUESTION);
-    JRadioButton cooperative=new JRadioButton(Constants.StrCOOPERATIVE);
+    JRadioButton neutral=new JRadioButton(Constants.StrCOOPERATIVE);
     JRadioButton defective=new JRadioButton(Constants.StrDEFECTIVE);
     JRadioButton supportive=new JRadioButton(Constants.StrSUPPORTIVE);
+    JRadioButton none=new JRadioButton(Constants.StrNONE);
 
     ButtonGroup buttonGroup;
 
@@ -26,16 +27,20 @@ public class OptionsDialog extends JDialog {
         panel.setLayout(new BoxLayout(panel,BoxLayout.Y_AXIS));
         buttonGroup=new ButtonGroup();
         buttonGroup.add(supportive);
-        buttonGroup.add(cooperative);
+        buttonGroup.add(neutral);
         buttonGroup.add(defective);
+        buttonGroup.add(none);
         heading.setAlignmentX(Box.CENTER_ALIGNMENT);
         panel.add(heading);
         supportive.setAlignmentX(Box.CENTER_ALIGNMENT);
         panel.add(supportive);
-        cooperative.setAlignmentX(Box.CENTER_ALIGNMENT);
-        panel.add(cooperative);
+        neutral.setAlignmentX(Box.CENTER_ALIGNMENT);
+        panel.add(neutral);
         defective.setAlignmentX(Box.CENTER_ALIGNMENT);
         panel.add(defective);
+        none.setAlignmentX(Box.CENTER_ALIGNMENT);
+        none.setSelected(true);
+        panel.add(none);
         ok.setAlignmentX(Box.CENTER_ALIGNMENT);
         panel.add(ok);
         add(panel);
@@ -46,7 +51,7 @@ public class OptionsDialog extends JDialog {
     {
         if (supportive.isSelected())
             return Constants.SUPPORTIVE;
-        else if (cooperative.isSelected())
+        else if (neutral.isSelected())
             return Constants.COOPERATIVE;
         else if (defective.isSelected())
             return Constants.DEFECTIVE;

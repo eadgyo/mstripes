@@ -30,9 +30,10 @@ public interface Constants
     Dimension MIN_MAP_DIMENSION_SIZE = new Dimension(400, 300);
 
     String OPTIONS_QUESTION="The added layer is:";
-    String StrCOOPERATIVE="Co-operative";
+    String StrCOOPERATIVE="Neutral";
     String StrDEFECTIVE="Defective";
     String StrSUPPORTIVE="Supportive";
+    String StrNONE="None";
 
     // Image locations
     String IMAGE_UPES_PATH = "upes.png";

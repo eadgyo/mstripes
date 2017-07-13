@@ -9,13 +9,13 @@ import javax.swing.*;
  */
 public class Classification
 {
-    private DefaultListModel<String> cooperative = new DefaultListModel<>();
+    private DefaultListModel<String> neutral = new DefaultListModel<>();
     private DefaultListModel<String> defective = new DefaultListModel<>();
     private DefaultListModel<String>  supportive = new DefaultListModel<>();
 
     public void addCooperative(Layer layer)
     {
-        cooperative.add(0, layer.getTitle());
+        neutral.add(0, layer.getTitle());
     }
 
     public void addSupportive(Layer layer)
@@ -28,9 +28,9 @@ public class Classification
         defective.add(0, layer.getTitle());
     }
 
-    public DefaultListModel<String> getCooperative()
+    public DefaultListModel<String> getNeutral()
     {
-        return cooperative;
+        return neutral;
     }
 
     public DefaultListModel<String> getDefective()
