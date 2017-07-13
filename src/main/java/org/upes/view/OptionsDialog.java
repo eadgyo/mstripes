@@ -13,9 +13,9 @@ public class OptionsDialog extends JDialog {
     public JButton ok = new JButton();
     public JPanel panel = new JPanel();
     JLabel heading=new JLabel(Constants.OPTIONS_QUESTION);
-    JRadioButton cooperative=new JRadioButton(Constants.COOPERATIVE);
-    JRadioButton defective=new JRadioButton(Constants.DEFECTIVE);
-    JRadioButton supportive=new JRadioButton(Constants.SUPPORTIVE);
+    JRadioButton cooperative=new JRadioButton(Constants.StrCOOPERATIVE);
+    JRadioButton defective=new JRadioButton(Constants.StrDEFECTIVE);
+    JRadioButton supportive=new JRadioButton(Constants.StrSUPPORTIVE);
 
     ButtonGroup buttonGroup;
 
@@ -45,11 +45,11 @@ public class OptionsDialog extends JDialog {
     public int getSelectedOption()
     {
         if (supportive.isSelected())
-            return 3;
+            return Constants.SUPPORTIVE;
         else if (cooperative.isSelected())
-            return 1;
+            return Constants.COOPERATIVE;
         else if (defective.isSelected())
-            return 2;
+            return Constants.DEFECTIVE;
 
         return 0;
     }

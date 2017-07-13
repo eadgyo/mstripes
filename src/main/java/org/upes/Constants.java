@@ -30,9 +30,9 @@ public interface Constants
     Dimension MIN_MAP_DIMENSION_SIZE = new Dimension(400, 300);
 
     String OPTIONS_QUESTION="The added layer is:";
-    String COOPERATIVE="Co-operative";
-    String DEFECTIVE="Defective";
-    String SUPPORTIVE="Supportive";
+    String StrCOOPERATIVE="Co-operative";
+    String StrDEFECTIVE="Defective";
+    String StrSUPPORTIVE="Supportive";
 
     // Image locations
     String IMAGE_UPES_PATH = "upes.png";
@@ -53,5 +53,10 @@ public interface Constants
     int WIRELESS_STATION=1;
 
     String ROAD_NAME_FILE = "forst_road_core";
+
+    int SUPPORTIVE=3;
+    int DEFECTIVE=2;
+    int COOPERATIVE=1;
+
 
 }

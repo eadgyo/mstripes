@@ -35,7 +35,6 @@ public class View extends JFrame
         mainPanel.add("a", loadingPanel);
         mainPanel.add("b", mapPanel);
 
-
     }
 
 
@@ -48,7 +47,7 @@ public class View extends JFrame
     {
         this.validate();
         this.pack();
-
+        this.mapPanel.jSplitPane.setDividerLocation(this.mapPanel.getWidth()*30/100);
         this.layerDialog.pack();
         this.layerDialog.setLocationRelativeTo(null);
         this.setLocationRelativeTo(null);

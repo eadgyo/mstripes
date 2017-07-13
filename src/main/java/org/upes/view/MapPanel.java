@@ -30,6 +30,7 @@ public class MapPanel extends JPanel
 
     public Set<JMapFrame.Tool> toolSet;
     public JToolBar            toolBar;
+    public JSplitPane jSplitPane;
 
 
     public MapPanel()
@@ -52,7 +53,8 @@ public class MapPanel extends JPanel
         middlePart.add(mapPane, BorderLayout.CENTER);
         middlePart.setMinimumSize(Constants.MIN_MAP_DIMENSION_SIZE);
 
-        JSplitPane jSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPart, middlePart);
+        jSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPart, middlePart);
+
         rightPart.setLayout(new BoxLayout(rightPart,BoxLayout.Y_AXIS));
         // Right part
         rightPart.add(Box.createRigidArea(new Dimension(0,10)));

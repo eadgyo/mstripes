@@ -26,12 +26,15 @@ public class ClassificationView extends JPanel
         JPanel cooperativePane = new JPanel();
         JPanel defectivePane = new JPanel();
 
+        supportivePane.setLayout(new BoxLayout(supportivePane,BoxLayout.Y_AXIS));
         supportivePane.add(supportiveLabel);
         supportivePane.add(supportiveScrollPane);
 
+        cooperativePane.setLayout(new BoxLayout(cooperativePane,BoxLayout.Y_AXIS));
         cooperativePane.add(cooperativeLabel);
         cooperativePane.add(cooperativeScrollPane);
 
+        defectivePane.setLayout(new BoxLayout(defectivePane,BoxLayout.Y_AXIS));
         defectivePane.add(defectiveLabel);
         defectivePane.add(defectiveScrollPane);
 

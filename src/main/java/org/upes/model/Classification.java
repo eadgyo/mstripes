@@ -25,7 +25,7 @@ public class Classification
 
     public void addDefective(Layer layer)
     {
-        cooperative.add(0, layer.getTitle());
+        defective.add(0, layer.getTitle());
     }
 
     public DefaultListModel<String> getCooperative()

@@ -19,6 +19,7 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.filter.identity.FeatureId;
+import org.upes.Constants;
 import org.upes.MyStyleFactory;
 import org.upes.PersonalConstants;
 
@@ -303,15 +304,15 @@ public class SimpleModel
 
     public void addToClassification(int selectedOption, Layer layer)
     {
-        if (selectedOption == 1)
+        if (selectedOption == Constants.SUPPORTIVE)
         {
             classification.addSupportive(layer);
         }
-        else if (selectedOption == 2)
+        else if (selectedOption == Constants.COOPERATIVE)
         {
-            classification.addSupportive(layer);
+            classification.addCooperative(layer);
         }
-        else
+        else if (selectedOption==Constants.DEFECTIVE)
         {
             classification.addDefective(layer);
         }

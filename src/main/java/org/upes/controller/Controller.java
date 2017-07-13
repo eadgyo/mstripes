@@ -109,7 +109,8 @@ public class Controller
             chooser.setFileFilter(filter);
             chooser.showOpenDialog(view);
             File sourceFile=chooser.getSelectedFile();
-
+            view.optionsDialog.setVisible(true);
+            int selectedOption = view.optionsDialog.getSelectedOption();
             if (sourceFile == null)
                 return;
 
@@ -124,10 +125,6 @@ public class Controller
                         JOptionPane.ERROR_MESSAGE);
                 return;
             }
-
-            view.optionsDialog.setVisible(true);
-
-            int            selectedOption = view.optionsDialog.getSelectedOption();
             model.addToClassification(selectedOption, layer);
             model.setInitPath(sourceFile.getParent());
             repaint();
