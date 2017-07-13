@@ -1,34 +1,30 @@
 package org.upes.model;
 
-import com.vividsolutions.jts.geom.Geometry;
-import org.geotools.data.DataUtilities;
+import com.vividsolutions.jts.geom.*;
 import org.geotools.data.FeatureSource;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
-import org.geotools.feature.SchemaException;
-import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.filter.AreaFunction;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.map.FeatureLayer;
 import org.geotools.map.Layer;
 import org.geotools.referencing.CRS;
-import org.geotools.styling.SLD;
-import org.geotools.styling.Style;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.feature.type.GeometryDescriptor;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
 import org.upes.Constants;
 
-import java.awt.*;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Vector;
+
 
 /**
  * Created by eadgyo on 27/06/17.
@@ -36,6 +32,11 @@ import java.util.Vector;
 public class Model extends SimpleModel
 {
 
+    private enum GeomType {
+        POLYGON,
+        LINE,
+        POINT
+    }
 
     @Override
     public void checkLayer(Layer addedLayer)
@@ -110,8 +111,15 @@ public class Model extends SimpleModel
             {
                 SimpleFeature next = features.next();
                 Beat temp=beatIterator.next();
-                double status = (double) next.getAttribute("STATUS");
-                double result = status * temp.getRoadLength();
+                Object        statusValue = next.getAttribute("STATUS");
+                double status;
+                if (statusValue instanceof Double)
+                {
+                    double statusValueT = (Integer) statusValue;
+                    statusValue = statusValueT;
+                }
+                status = (double) statusValue;
+                double result = status * temp.getValue();
                 tableModel.setValueAt(result, row, roadColumn);
             }
         }
@@ -165,7 +173,7 @@ public class Model extends SimpleModel
   //                      fcollect.add(feature);
                     }
                 }
-                currBeat.setRoadLength(lineLength);
+                currBeat.setValue(lineLength);
 
 //                if(!fcollect.isEmpty())
 //                { count++;
@@ -192,6 +200,118 @@ public class Model extends SimpleModel
         }
 
         return beats;
+    }
+
+    public void calculateForAll()
+    {
+        Iterator<Layer> iterator = map.layers().iterator();
+        while (iterator.hasNext())
+        {
+            Layer next = iterator.next();
+            LinkedList<Beat> calculate = calculate(next);
+            System.out.println(next.getTitle());
+            for (Beat beat : calculate)
+            {
+                System.out.println("For ID" + beat.getId() + "  Value --> " + beat.getValue());
+            }
+        }
+    }
+
+    public LinkedList<Beat> calculate(Layer layer)
+    {
+        GeomType type = getGeometryType(layer);
+
+        Layer beatLayer = getLayer("BEAT");
+        LinkedList<Beat> beats=new LinkedList<Beat>();
+
+        if (beatLayer == null || beatLayer == layer)
+            return beats;
+
+        SimpleFeatureIterator linefeatures=null;
+        SimpleFeatureIterator simpleFeatureIterator=null;
+        Layer newLayer=null;
+        AreaFunction areaFunction=new AreaFunction();
+        Beat currBeat;
+        try {
+            simpleFeatureIterator= (SimpleFeatureIterator) beatLayer.getFeatureSource().getFeatures().features();
+            int count=0;
+            while (simpleFeatureIterator.hasNext())
+            {
+                SimpleFeature next=simpleFeatureIterator.next();
+                Geometry beatGeometry= (Geometry) next.getDefaultGeometry();
+                linefeatures = (SimpleFeatureIterator) layer.getFeatureSource().getFeatures().features();
+                DefaultFeatureCollection fcollect=new DefaultFeatureCollection();
+                CoordinateReferenceSystem beatCRS = beatLayer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
+                CoordinateReferenceSystem lineCRS = layer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
+                MathTransform transform=null;
+                currBeat=new Beat(next.getID());
+                transform= CRS.findMathTransform(lineCRS,beatCRS,true);
+                currBeat.setArea(areaFunction.getArea(beatGeometry));
+                int id=0;
+                double v=0;
+                while (linefeatures.hasNext())
+                {
+                    SimpleFeature lineFeature=linefeatures.next();
+                    Geometry temp=(Geometry) lineFeature.getDefaultGeometry();
+                    Geometry lineGeometry = JTS.transform(temp,transform);
+
+                    if (beatGeometry.intersects(lineGeometry))
+                    {
+                        Geometry intersection = lineGeometry.intersection(beatGeometry);
+                        id++;
+                        switch (type)
+                        {
+                            case POLYGON:
+                                v+=intersection.getArea();
+                                break;
+                            case LINE:
+                                v+=intersection.getLength();
+                                break;
+                            case POINT:
+                                v+=1;
+                                break;
+                        }
+
+                    }
+                }
+                currBeat.setValue(v);
+                linefeatures.close();
+                beats.add(currBeat);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (FactoryException e) {
+            e.printStackTrace();
+        } catch (TransformException e) {
+            e.printStackTrace();
+        } finally
+        {
+            simpleFeatureIterator.close();
+            linefeatures.close();
+        }
+
+        return beats;
+    }
+
+    private GeomType getGeometryType(Layer layer)
+    {
+        GeometryDescriptor geomDesc = layer.getFeatureSource().getSchema().getGeometryDescriptor();
+        String geometryAttributeName = geomDesc.getLocalName();
+
+        Class<?> clazz = geomDesc.getType().getBinding();
+        if (Polygon.class.isAssignableFrom(clazz) ||
+                MultiPolygon.class.isAssignableFrom(clazz)) {
+            return GeomType.POLYGON;
+
+        } else if (LineString.class.isAssignableFrom(clazz) ||
+                MultiLineString.class.isAssignableFrom(clazz)) {
+
+            return GeomType.LINE;
+
+        } else {
+            return GeomType.POINT;
+        }
+
     }
 
     public void calculate_area(Layer layer)

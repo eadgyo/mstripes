@@ -7,13 +7,13 @@ public class Beat {
 
     private String id;
     private double area;
-    private double roadLength;
+    private double value;
 
     public Beat(String id)
     {
         this.id=id;
         area=0;
-        roadLength=0;
+        value =0;
     }
 
     public String getId()
@@ -28,11 +28,11 @@ public class Beat {
         this.area = area;
     }
 
-    public double getRoadLength() {
-        return roadLength;
+    public double getValue() {
+        return value;
     }
 
-    public void setRoadLength(double roadLength) {
-        this.roadLength = roadLength;
+    public void setValue(double value) {
+        this.value = value;
     }
 }
