@@ -1,8 +1,11 @@
 package org.upes;
 
+import org.geotools.image.ImageWorker;
 import org.upes.controller.Controller;
 import org.upes.model.Model;
 import org.upes.view.View;
+
+import java.awt.*;
 
 /**
  * Created by eadgyo on 27/06/17.
@@ -24,7 +27,6 @@ public class Application
         view = new View();
         model = new Model();
         controller = new Controller(view, model);
-
         view.optionsDialog.pack();
         launchApp();
 

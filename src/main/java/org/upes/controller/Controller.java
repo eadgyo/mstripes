@@ -108,12 +108,18 @@ public class Controller
             JFileChooser chooser=new JFileChooser(model.getInitPath());
             FileFilter filter = new FileNameExtensionFilter("ESRI Shapefile(*.shp)","shp");
             chooser.setFileFilter(filter);
-            chooser.showOpenDialog(view);
+            int result=chooser.showOpenDialog(view);
+
             File sourceFile=chooser.getSelectedFile();
-            view.optionsDialog.setVisible(true);
-            int selectedOption = view.optionsDialog.getSelectedOption();
+
             if (sourceFile == null)
                 return;
+
+            if (result==JFileChooser.CANCEL_OPTION)
+                return;
+
+            view.optionsDialog.setVisible(true);
+            int selectedOption = view.optionsDialog.getSelectedOption();
 
             Layer layer = null;
             try
