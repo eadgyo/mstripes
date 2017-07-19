@@ -151,10 +151,13 @@ public class Controller
             JFileChooser chooser=new JFileChooser(model.getInitPath());
             FileFilter filter = new FileNameExtensionFilter("ESRI Shapefile(*.shp)","shp");
             chooser.setFileFilter(filter);
-            chooser.showOpenDialog(view);
+            int resullt=chooser.showOpenDialog(view);
             File sourceFile=chooser.getSelectedFile();
 
             if (sourceFile == null)
+                return;
+
+            if (resullt==JFileChooser.CANCEL_OPTION)
                 return;
 
             try

@@ -92,9 +92,23 @@ public class SimpleModel
 
     public void removeLayer(Layer layer)
     {
-        if (getMap().layers().contains(layer))
+        if (!getMap().layers().contains(layer))
+        {
             getMap().removeLayer(layer);
-
+            tableModel.removeLayer(layer.getTitle());
+            if (classification.getSupportive().contains(layer.getTitle()))
+            {
+                classification.getSupportive().removeElement(layer.getTitle());
+            }
+            else if(classification.getNeutral().contains(layer.getTitle()))
+            {
+                classification.getNeutral().removeElement(layer.getTitle());
+            }
+            else if(classification.getDefective().contains(layer.getTitle()))
+            {
+                classification.getDefective().removeElement(layer.getTitle());
+            }
+        }
     }
 
     public Layer getLayer(String layerName)
