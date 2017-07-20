@@ -76,6 +76,8 @@ public class MapServer
             String filename = shapeFile.substring(shapeFile.lastIndexOf("/") + 1);
             byte[] read = readFile(shapeFile);
 
+            System.out.println("Request file " + filename);
+
             Headers h = t.getResponseHeaders();
             h.add("Content-Type", "application/octet-stream");
             h.add("Content-Disposition", "attachment; filename=\"" + filename + "\"");
@@ -120,7 +122,7 @@ public class MapServer
 
     public static void main(String[] args)
     {
-        MapServer mapServer = new MapServer(8080, "/home/ronan-j/Documents/work.txt");
+        MapServer mapServer = new MapServer(8080, "/home/ronan-j/Documents/Basemaps/BEAT.dbf");
         mapServer.start();
     }
 }
