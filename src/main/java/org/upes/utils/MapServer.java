@@ -120,7 +120,7 @@ public class MapServer
 
     public static void main(String[] args)
     {
-        MapServer mapServer = new MapServer(8080, "/home/ronan-j/Documents/work.txt");
+        MapServer mapServer = new MapServer(1024, "F:/intern/Basemaps/BEAT.dbf");
         mapServer.start();
     }
 }

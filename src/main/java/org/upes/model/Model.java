@@ -32,6 +32,8 @@ import java.util.Vector;
 public class Model extends SimpleModel
 {
 
+    Score score=new Score();
+
     private enum GeomType {
         POLYGON,
         LINE,
@@ -216,9 +218,10 @@ public class Model extends SimpleModel
             {
                 LinkedList<Beat> calculate = calculate(next);
                 System.out.println(next.getTitle());
-                for (Beat beat : calculate) {
-                    System.out.println("For ID" + beat.getId() + "  Value --> " + beat.getValue());
-                }
+                CalculateCostFactor(calculate,next);
+//                for (Beat beat : calculate) {
+//                    System.out.println("For ID" + beat.getId() + "  Value --> " + beat.getValue());
+//                }
             }
         }
     }
@@ -254,12 +257,24 @@ public class Model extends SimpleModel
                 currBeat.setArea(areaFunction.getArea(beatGeometry));
                 int id=0;
                 double v=0;
+                double totalArea=0;
                 while (linefeatures.hasNext())
                 {
                     SimpleFeature lineFeature=linefeatures.next();
                     Geometry temp=(Geometry) lineFeature.getDefaultGeometry();
                     Geometry lineGeometry = JTS.transform(temp,transform);
 
+                    switch (type)
+                    {
+                        case POLYGON:
+                            totalArea+=lineGeometry.getArea();
+                            break;
+                        case LINE:
+                            totalArea+=lineGeometry.getLength();
+                            break;
+                        case POINT:
+                            totalArea=1;
+                    }
                     if (beatGeometry.intersects(lineGeometry))
                     {
                         Geometry intersection = lineGeometry.intersection(beatGeometry);
@@ -278,7 +293,7 @@ public class Model extends SimpleModel
                         }
                     }
                 }
-                currBeat.setValue(v);
+                currBeat.setValue(v/totalArea);
                 linefeatures.close();
                 beats.add(currBeat);
             }
@@ -295,6 +310,32 @@ public class Model extends SimpleModel
         }
 
         return beats;
+    }
+
+    public void CalculateCostFactor(LinkedList<Beat> contributions, Layer layer)
+    {
+        if(classification.getSupportive().contains(layer.getTitle()))
+        {
+            for (Beat beat:contributions)
+            {
+                System.out.print(beat.getValue()+"   ");
+                System.out.println(score.getSupportiveScore()*beat.getValue());
+            }
+        }
+        else if (classification.getDefective().contains(layer.getTitle()))
+        {
+            for (Beat beat:contributions)
+            {
+                System.out.println(score.getDefectiveScore()*beat.getValue());
+            }
+        }
+        else
+        {
+            for (Beat beat:contributions)
+            {
+                System.out.println(beat.getValue());
+            }
+        }
     }
 
     private GeomType getGeometryType(Layer layer)
