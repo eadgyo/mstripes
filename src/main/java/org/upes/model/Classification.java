@@ -13,6 +13,8 @@ public class Classification
     private DefaultListModel<String> defective = new DefaultListModel<>();
     private DefaultListModel<String>  supportive = new DefaultListModel<>();
 
+    private Score score=new Score();
+
     public void addCooperative(Layer layer)
     {
         neutral.add(0, layer.getTitle());
@@ -41,5 +43,37 @@ public class Classification
     public DefaultListModel<String> getSupportive()
     {
         return supportive;
+    }
+
+    public int getNeutralScore()
+    {
+        return score.getNeutralScore();
+    }
+
+    public int getSupportiveScore()
+    {
+        return score.getSupportiveScore();
+    }
+
+    public int getDefectiveScore()
+    {
+        return score.getDefectiveScore();
+    }
+
+    public double getScore(String layer)
+    {
+        if (neutral.contains(layer))
+        {
+            return score.getNeutralScore();
+        }
+        else if (defective.contains(layer))
+        {
+            return score.getDefectiveScore();
+        }
+        else if (supportive.contains(layer))
+        {
+            return score.getSupportiveScore();
+        }
+        return 0;
     }
 }

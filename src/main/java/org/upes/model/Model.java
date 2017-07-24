@@ -32,7 +32,6 @@ import java.util.Vector;
 public class Model extends SimpleModel
 {
 
-    Score score=new Score();
 
     private enum GeomType {
         POLYGON,
@@ -218,10 +217,10 @@ public class Model extends SimpleModel
             {
                 LinkedList<Beat> calculate = calculate(next);
                 System.out.println(next.getTitle());
-                CalculateCostFactor(calculate,next);
-//                for (Beat beat : calculate) {
-//                    System.out.println("For ID" + beat.getId() + "  Value --> " + beat.getValue());
-//                }
+//                CalculateCostFactor(calculate,next);
+                for (Beat beat : calculate) {
+                    System.out.println("For ID" + beat.getId() + "  Score --> " + beat.getScore());
+                }
             }
         }
     }
@@ -282,7 +281,10 @@ public class Model extends SimpleModel
                         switch (type)
                         {
                             case POLYGON:
-                                v+=intersection.getArea();
+                                double area = intersection.getArea();
+                                v+= area;
+                                double lineScore = area * classification.getScore(layer.getTitle()) / currBeat.getArea();
+                                currBeat.addScore(layer.getTitle(), lineScore);
                                 break;
                             case LINE:
                                 v+=intersection.getLength();
@@ -310,32 +312,6 @@ public class Model extends SimpleModel
         }
 
         return beats;
-    }
-
-    public void CalculateCostFactor(LinkedList<Beat> contributions, Layer layer)
-    {
-        if(classification.getSupportive().contains(layer.getTitle()))
-        {
-            for (Beat beat:contributions)
-            {
-                System.out.print(beat.getValue()+"   ");
-                System.out.println(score.getSupportiveScore()*beat.getValue());
-            }
-        }
-        else if (classification.getDefective().contains(layer.getTitle()))
-        {
-            for (Beat beat:contributions)
-            {
-                System.out.println(score.getDefectiveScore()*beat.getValue());
-            }
-        }
-        else
-        {
-            for (Beat beat:contributions)
-            {
-                System.out.println(beat.getValue());
-            }
-        }
     }
 
     private GeomType getGeometryType(Layer layer)

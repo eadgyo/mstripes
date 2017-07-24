@@ -7,6 +7,9 @@ import java.util.Map;
 
 public class Score {
 
+    /**
+     * Name of layer link to score
+     */
     Map<String,Integer> Scores =new HashMap<>();
 
     public Score()
