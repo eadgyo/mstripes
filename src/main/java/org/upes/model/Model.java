@@ -333,13 +333,8 @@ public class Model extends SimpleModel
 
         MathTransform mathTransform = getTransformGeometry(beatLayer, layer);
 
-
-        CoordinateReferenceSystem beatCRS = layer.getFeatureSource()
-                                                  .getSchema()
-                                                  .getCoordinateReferenceSystem();
-        CoordinateReferenceSystem layerCRS = layer.getFeatureSource()
-                                                                       .getSchema()
-                                                                       .getCoordinateReferenceSystem();
+        CoordinateReferenceSystem layerCRS = layer.getFeatureSource().getSchema()
+                                                    .getCoordinateReferenceSystem();
 
         try {
             beatIter= (SimpleFeatureIterator) beatLayer.getFeatureSource().getFeatures().features();
