@@ -225,6 +225,59 @@ public class Model extends SimpleModel
         }
     }
 
+    private MathTransform getTransformGeometry(Layer destLayerCRS, Layer originLayerCRS)
+    {
+        CoordinateReferenceSystem beatCRS = destLayerCRS.getFeatureSource().getSchema().getCoordinateReferenceSystem();
+        CoordinateReferenceSystem lineCRS = originLayerCRS.getFeatureSource().getSchema().getCoordinateReferenceSystem();
+        MathTransform transform= null;
+        try {
+            transform = CRS.findMathTransform(lineCRS, beatCRS, true);
+        } catch (FactoryException e) {
+            e.printStackTrace();
+        }
+        return transform;
+    }
+
+    private double getArea(Geometry lineGeometry, GeomType type)
+    {
+        switch (type)
+        {
+            case POLYGON:
+                return lineGeometry.getArea();
+            case LINE:
+                return lineGeometry.getLength();
+            case POINT:
+                return 1;
+        }
+
+        return 0;
+    }
+
+    private double getIntersectionValue(GeomType type, Beat currBeat,
+                                        Layer layer,
+                                        Geometry lineGeometry,
+                                        Geometry beatGeometry)
+    {
+        if (beatGeometry.intersects(lineGeometry))
+        {
+            Geometry intersection = lineGeometry.intersection(beatGeometry);
+            switch (type)
+            {
+                case POLYGON:
+                    double area = intersection.getArea();
+                    double lineScore = area * classification.getScore(layer.getTitle()) / currBeat.getArea();
+                    currBeat.addScore(layer.getTitle(), lineScore);
+                    return area;
+                case LINE:
+                    return intersection.getLength();
+                case POINT:
+                    return 1;
+            }
+        }
+        return 0;
+
+    }
+
     public LinkedList<Beat> calculate(Layer layer)
     {
         GeomType type = getGeometryType(layer);
@@ -237,75 +290,40 @@ public class Model extends SimpleModel
 
         SimpleFeatureIterator linefeatures=null;
         SimpleFeatureIterator simpleFeatureIterator=null;
-        Layer newLayer=null;
-        AreaFunction areaFunction=new AreaFunction();
+        AreaFunction areaFunction = new AreaFunction();
         Beat currBeat;
+
+        MathTransform mathTransform = getTransformGeometry(beatLayer, layer);
+
         try {
             simpleFeatureIterator= (SimpleFeatureIterator) beatLayer.getFeatureSource().getFeatures().features();
-            int count=0;
             while (simpleFeatureIterator.hasNext())
             {
-                SimpleFeature next=simpleFeatureIterator.next();
-                Geometry beatGeometry= (Geometry) next.getDefaultGeometry();
+                SimpleFeature next = simpleFeatureIterator.next();
+                Geometry beatGeometry = (Geometry) next.getDefaultGeometry();
                 linefeatures = (SimpleFeatureIterator) layer.getFeatureSource().getFeatures().features();
-                CoordinateReferenceSystem beatCRS = beatLayer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
-                CoordinateReferenceSystem lineCRS = layer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
-                MathTransform transform=null;
-                currBeat=new Beat(next.getID());
-                transform= CRS.findMathTransform(lineCRS,beatCRS,true);
+                currBeat = new Beat(next.getID());
                 currBeat.setArea(areaFunction.getArea(beatGeometry));
-                int id=0;
-                double v=0;
-                double totalArea=0;
+
+                double v = 0;
+                double totalArea = 0;
                 while (linefeatures.hasNext())
                 {
                     SimpleFeature lineFeature=linefeatures.next();
-                    Geometry temp=(Geometry) lineFeature.getDefaultGeometry();
-                    Geometry lineGeometry = JTS.transform(temp,transform);
+                    Geometry temp= (Geometry) lineFeature.getDefaultGeometry();
+                    Geometry lineGeometry = JTS.transform(temp, mathTransform);
 
-                    switch (type)
-                    {
-                        case POLYGON:
-                            totalArea+=lineGeometry.getArea();
-                            break;
-                        case LINE:
-                            totalArea+=lineGeometry.getLength();
-                            break;
-                        case POINT:
-                            totalArea=1;
-                    }
-                    if (beatGeometry.intersects(lineGeometry))
-                    {
-                        Geometry intersection = lineGeometry.intersection(beatGeometry);
-                        id++;
-                        switch (type)
-                        {
-                            case POLYGON:
-                                double area = intersection.getArea();
-                                v+= area;
-                                double lineScore = area * classification.getScore(layer.getTitle()) / currBeat.getArea();
-                                currBeat.addScore(layer.getTitle(), lineScore);
-                                break;
-                            case LINE:
-                                v+=intersection.getLength();
-                                break;
-                            case POINT:
-                                v+=1;
-                                break;
-                        }
-                    }
+                    totalArea += getArea(lineGeometry, type);
+                    v += getIntersectionValue(type, currBeat, layer, lineGeometry, beatGeometry);
                 }
                 currBeat.setValue(v/totalArea);
                 linefeatures.close();
                 beats.add(currBeat);
             }
-        } catch (IOException e) {
+        } catch (IOException | TransformException e) {
             e.printStackTrace();
-        } catch (FactoryException e) {
-            e.printStackTrace();
-        } catch (TransformException e) {
-            e.printStackTrace();
-        } finally
+        }
+        finally
         {
             simpleFeatureIterator.close();
             linefeatures.close();
