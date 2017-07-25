@@ -67,4 +67,9 @@ public class Beat {
     {
         return scoreLayer.get(layer);
     }
+
+    public void addValue(double v)
+    {
+        value += v;
+    }
 }

@@ -240,11 +240,13 @@ public class Model extends SimpleModel
         return transform;
     }
 
-    private double getIntersectionValue(GeomType type, Beat currBeat,
+    private void registerIntersection(GeomType type, Beat currBeat,
                                         Layer layer,
                                         Geometry lineGeometry,
                                         Geometry beatGeometry)
     {
+        double v = 0;
+        double score = 0;
         if (beatGeometry.intersects(lineGeometry))
         {
             Geometry intersection = lineGeometry.intersection(beatGeometry);
@@ -252,17 +254,20 @@ public class Model extends SimpleModel
             {
                 case POLYGON:
                     double area = intersection.getArea();
-                    double lineScore = area * classification.getScore(layer.getTitle()) / currBeat.getArea();
-                    currBeat.addScore(layer.getTitle(), lineScore);
-                    return area;
+                    score = area * classification.getScore(layer.getTitle()) / currBeat.getArea();
+                    v = area;
+                    break;
                 case LINE:
-                    return intersection.getLength();
+                    v = intersection.getLength();
+                    break;
                 case POINT:
-                    return 1;
+                    v = 1;
+                    score = classification.getScore(layer.getTitle());
+                    break;
             }
         }
-        return 0;
-
+        currBeat.addValue(v);
+        currBeat.addScore(layer.getTitle(), score);
     }
 
     private SimpleFeatureCollection getCollidingFeature(Geometry beatGeometry, Layer layer,
@@ -300,7 +305,7 @@ public class Model extends SimpleModel
 
                 SimpleFeature lineFeature = (SimpleFeature) layerIter.next();
                 Geometry lineGeometry = (Geometry) lineFeature.getDefaultGeometry();
-                v += getIntersectionValue(type, currBeat, layer, lineGeometry, beatGeometry);
+                registerIntersection(type, currBeat, layer, lineGeometry, beatGeometry);
             }
 
             if (v != vC)
@@ -354,11 +359,10 @@ public class Model extends SimpleModel
                     SimpleFeature lineFeature=layerIter.next();
                     Geometry lineGeometry = (Geometry) lineFeature.getDefaultGeometry();
 
-                    v += getIntersectionValue(type, currBeat, layer, lineGeometry, beatGeometry);
+                    registerIntersection(type, currBeat, layer, lineGeometry, beatGeometry);
                 }
                 //TestCompare(v, type, currBeat, layer, beatGeometry);
 
-                currBeat.setValue(v);
                 layerIter.close();
                 beats.add(currBeat);
             }
