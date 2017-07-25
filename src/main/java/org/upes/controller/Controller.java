@@ -1,8 +1,13 @@
 package org.upes.controller;
 
 import com.vividsolutions.jts.geom.Geometry;
+import org.geotools.data.DataStore;
+import org.geotools.data.DataUtilities;
+import org.geotools.data.FileDataStoreFactorySpi;
+import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
+import org.geotools.feature.SchemaException;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.FeatureLayer;
 import org.geotools.map.Layer;
@@ -11,12 +16,15 @@ import org.geotools.styling.Style;
 import org.geotools.swing.event.MapMouseEvent;
 import org.geotools.swing.event.MapMouseListener;
 import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.identity.FeatureId;
 import org.upes.Constants;
 import org.upes.model.Classification;
 import org.upes.model.Model;
 import org.upes.model.MyTableModel;
 import org.upes.model.RuleEntry;
+import org.upes.utils.MapServer;
+import org.upes.utils.ZipCreator;
 import org.upes.view.MapPanel;
 import org.upes.view.View;
 
@@ -25,9 +33,12 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.xml.ws.spi.http.HttpExchange;
+import javax.xml.ws.spi.http.HttpHandler;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
@@ -49,6 +60,9 @@ public class Controller
     private OkClassificationAction okClassification =new OkClassificationAction();
     private MyTableListener tableListener = new MyTableListener();
     private CalcAction calcAction=new CalcAction();
+    private ShareAction shareAction = new ShareAction();
+
+    protected MapServer mapServer;
 
     public Controller(View view, Model model)
     {
@@ -59,6 +73,7 @@ public class Controller
         // Set actions
         mapPanel.loadButton.setAction(loadAction);
         mapPanel.addButton.setAction(addAction);
+        mapPanel.shareButton.setAction(shareAction);
         view.layerDialog.okButton.setAction(okLayerAction);
         mapPanel.deleteButton.setAction(deleteAction);
         view.optionsDialog.ok.setAction(okClassification);
@@ -87,6 +102,16 @@ public class Controller
         // Add listener
         mapPanel.mapPane.addMouseListener(new MouseMapListener());
         mapPanel.table.getSelectionModel().addListSelectionListener(tableListener);
+
+        try
+        {
+            mapServer = new MapServer(Constants.SERVER_PORT);
+
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
     }
 
     private class AddAction extends AbstractAction {
@@ -364,7 +389,33 @@ public class Controller
         }
     }
 
+    private class ShareAction extends AbstractAction
+    {
+        public ShareAction()
+        {
+            super("Share");
+        }
 
+        @Override
+        public void actionPerformed(ActionEvent actionEvent)
+        {
+            Collection<String> sourceLayers = model.getSourceLayers();
+            try
+            {
+                ZipCreator zip = new ZipCreator("test.zip");
+                for (String sourceLayer : sourceLayers)
+                {
+                    zip.addFile(sourceLayer, sourceLayer);
+                }
+                zip.close();
+            }
+            catch (FileNotFoundException e)
+            {
+                e.printStackTrace();
+            }
+
+        }
+    }
 
     public void updateSelectedLayers()
     {
@@ -421,5 +472,28 @@ public class Controller
     public MapContent getMap()
     {
         return mapPanel.mapPane.getMapContent();
+    }
+
+    public void createFile(String fileName, String type) throws IOException, SchemaException
+    {
+        FileDataStoreFactorySpi factory = new ShapefileDataStoreFactory();
+
+        File file = new File(fileName);
+        Map map = Collections.singletonMap( "url", file.toURI().toURL() );
+
+        DataStore myData = factory.createNewDataStore(map);
+        SimpleFeatureType featureType =
+                DataUtilities.createType("my", "geom:" + type + ",name:String,age:Integer,description:String");
+        myData.createSchema( featureType );
+    }
+
+
+    public class ShapeFileHandler extends HttpHandler
+    {
+        @Override
+        public void handle(HttpExchange httpExchange) throws IOException
+        {
+
+        }
     }
 }

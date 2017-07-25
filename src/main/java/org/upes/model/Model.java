@@ -34,7 +34,6 @@ import java.util.Vector;
 public class Model extends SimpleModel
 {
 
-
     private enum GeomType {
         POLYGON,
         LINE,

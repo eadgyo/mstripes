@@ -11,13 +11,14 @@ import java.net.InetSocketAddress;
 public class MapServer
 {
     int port;
-    String shapeFile = "";
+    HttpServer server = null;
 
-    public MapServer(int port, String shapeFile)
+    public MapServer(int port) throws IOException
     {
-       this.port = port;
-       this.shapeFile = shapeFile;
+        server = HttpServer.create(new InetSocketAddress(port), 0);
+        server.setExecutor(null); // creates a default executor
     }
+
 
     public int getPort()
     {
@@ -29,32 +30,26 @@ public class MapServer
         this.port = port;
     }
 
-    public String getShapeFile()
-    {
-        return shapeFile;
-    }
-
-    public void setShapeFile(String shapeFile)
-    {
-        this.shapeFile = shapeFile;
-    }
-
     protected void start()
     {
-        HttpServer server = null;
-        try
-        {
-            server = HttpServer.create(new InetSocketAddress(port), 0);
-            server.createContext("/test", new MyHandlerExample());
-            server.createContext("/", new MyHandlerFile());
-            server.setExecutor(null); // creates a default executor
-            server.start();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
+        server.start();
+    }
 
+    public void addContext(String source, HttpHandler handler)
+    {
+        server.createContext(source, handler);
+    }
+
+    public static void sendObject(byte[] read, String filename, HttpExchange t) throws IOException
+    {
+        Headers h = t.getResponseHeaders();
+        h.add("Content-Type", "application/octet-stream");
+        h.add("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+
+        t.sendResponseHeaders(200, read.length);
+        OutputStream os = t.getResponseBody();
+        os.write(read);
+        os.close();
     }
 
     class MyHandlerExample implements HttpHandler
@@ -73,19 +68,12 @@ public class MapServer
     {
         public void handle(HttpExchange t) throws IOException
         {
+            String shapeFile = "Basemaps/BEAT.dbf";
             String filename = shapeFile.substring(shapeFile.lastIndexOf("/") + 1);
             byte[] read = readFile(shapeFile);
 
             System.out.println("Request file " + filename);
-
-            Headers h = t.getResponseHeaders();
-            h.add("Content-Type", "application/octet-stream");
-            h.add("Content-Disposition", "attachment; filename=\"" + filename + "\"");
-
-            t.sendResponseHeaders(200, read.length);
-            OutputStream os = t.getResponseBody();
-            os.write(read);
-            os.close();
+            MapServer.sendObject(read, filename, t);
         }
     }
 
@@ -122,7 +110,15 @@ public class MapServer
 
     public static void main(String[] args)
     {
-        MapServer mapServer = new MapServer(8080, "/home/ronan-j/Documents/Basemaps/BEAT.dbf");
-        mapServer.start();
+        MapServer mapServer = null;
+        try
+        {
+            mapServer = new MapServer(8080);
+            mapServer.start();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
     }
 }

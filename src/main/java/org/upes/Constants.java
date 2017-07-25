@@ -61,5 +61,5 @@ public interface Constants
     int DEFECTIVE=2;
     int COOPERATIVE=1;
 
-
+    int SERVER_PORT = 8080;
 }

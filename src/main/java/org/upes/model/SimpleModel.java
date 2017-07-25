@@ -32,9 +32,7 @@ import javax.swing.table.TableModel;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.Vector;
+import java.util.*;
 
 /**
  * Created by eadgyo on 12/07/17.
@@ -54,6 +52,8 @@ public class SimpleModel
 
     protected StyleFactory   sf = CommonFactoryFinder.getStyleFactory();
     protected FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
+
+    protected HashMap<String, String> layerToSourcePath = new HashMap<>();
 
     public SimpleModel()
     {
@@ -113,6 +113,7 @@ public class SimpleModel
             {
                 classification.getDefective().removeElement(layer.getTitle());
             }
+            layerToSourcePath.remove(layer.getTitle());
         }
     }
 
@@ -160,6 +161,8 @@ public class SimpleModel
 
             checkLayer(addedLayer);
         }
+
+        layerToSourcePath.put(addedLayer.getTitle(), sourceFile.getPath());
 
         return addedLayer;
     }
@@ -353,5 +356,10 @@ public class SimpleModel
 
         Filter filter = ff.bbox(ff.property(geometryPropertyName), bbox);
         return (SimpleFeatureCollection) featureSource.getFeatures(filter);
+    }
+
+    public Collection<String> getSourceLayers()
+    {
+        return layerToSourcePath.values();
     }
 }
