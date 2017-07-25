@@ -1,8 +1,10 @@
 package org.upes.model;
 
 import com.vividsolutions.jts.geom.Geometry;
+import org.geotools.data.FeatureSource;
 import org.geotools.data.FileDataStore;
 import org.geotools.data.FileDataStoreFinder;
+import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.factory.CommonFactoryFinder;
@@ -17,8 +19,11 @@ import org.opengis.feature.Feature;
 import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.feature.type.FeatureType;
+import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.filter.identity.FeatureId;
+import org.opengis.geometry.BoundingBox;
 import org.upes.Constants;
 import org.upes.MyStyleFactory;
 import org.upes.PersonalConstants;
@@ -330,5 +335,23 @@ public class SimpleModel
         {
             classification.addDefective(layer);
         }
+    }
+
+    public SimpleFeatureCollection grabFeaturesInBoundingBox(BoundingBox bbox, Layer layer)
+            throws Exception
+    {
+        if (layer==null)
+            return null ;
+
+        FilterFactory2 ff     = CommonFactoryFinder.getFilterFactory2();
+
+        FeatureSource<?, ?> featureSource = layer.getFeatureSource();
+        FeatureType         schema        = featureSource.getSchema();
+
+        // usually "THE_GEOM" for shapefiles
+        String                    geometryPropertyName = schema.getGeometryDescriptor().getLocalName();
+
+        Filter filter = ff.bbox(ff.property(geometryPropertyName), bbox);
+        return (SimpleFeatureCollection) featureSource.getFeatures(filter);
     }
 }

@@ -1,10 +1,8 @@
 package org.upes.controller;
 
 import com.vividsolutions.jts.geom.Geometry;
-import org.geotools.data.FeatureSource;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
-import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.FeatureLayer;
 import org.geotools.map.Layer;
@@ -13,11 +11,7 @@ import org.geotools.styling.Style;
 import org.geotools.swing.event.MapMouseEvent;
 import org.geotools.swing.event.MapMouseListener;
 import org.opengis.feature.simple.SimpleFeature;
-import org.opengis.feature.type.FeatureType;
-import org.opengis.filter.Filter;
-import org.opengis.filter.FilterFactory2;
 import org.opengis.filter.identity.FeatureId;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.upes.Constants;
 import org.upes.model.Classification;
 import org.upes.model.Model;
@@ -264,27 +258,11 @@ public class Controller
     private class MouseMapListener implements MapMouseListener
     {
 
-        SimpleFeatureCollection grabFeaturesInBoundingBox(MapMouseEvent ev)
-                throws Exception
+        SimpleFeatureCollection grabFeaturesInMouseBox(MapMouseEvent ev) throws Exception
         {
-            FilterFactory2 ff     = CommonFactoryFinder.getFilterFactory2();
-            Layer beatLayer = model.getLayer("BEAT");
-            if (beatLayer==null)
-                return null ;
-
-            FeatureSource<?, ?> featureSource = beatLayer.getFeatureSource();
-            FeatureType    schema = featureSource.getSchema();
-
-            // usually "THE_GEOM" for shapefiles
-            String geometryPropertyName = schema.getGeometryDescriptor().getLocalName();
-            CoordinateReferenceSystem targetCRS = mapPanel.mapPane.getMapContent().getCoordinateReferenceSystem();
-
             ReferencedEnvelope bbox = ev.getEnvelopeByPixels(2);
-
-            Filter filter = ff.bbox(ff.property(geometryPropertyName), bbox);
-            return (SimpleFeatureCollection) featureSource.getFeatures(filter);
+            return model.grabFeaturesInBoundingBox(bbox, model.getLayer("BEAT"));
         }
-
 
         @Override
         public void onMouseClicked(MapMouseEvent mapMouseEvent)
@@ -321,7 +299,7 @@ public class Controller
           if(ev.getSource().getCursorTool()==null)
            {
                try {
-                   SimpleFeatureCollection simpleFeatureCollection = grabFeaturesInBoundingBox(ev);
+                   SimpleFeatureCollection simpleFeatureCollection = grabFeaturesInMouseBox(ev);
                    if (simpleFeatureCollection==null)
                        return;
                    SimpleFeatureIterator features = simpleFeatureCollection.features();

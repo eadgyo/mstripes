@@ -2,12 +2,14 @@ package org.upes.model;
 
 import com.vividsolutions.jts.geom.*;
 import org.geotools.data.FeatureSource;
+import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
 import org.geotools.filter.AreaFunction;
 import org.geotools.geometry.jts.JTS;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.FeatureLayer;
 import org.geotools.map.Layer;
 import org.geotools.referencing.CRS;
@@ -225,32 +227,17 @@ public class Model extends SimpleModel
         }
     }
 
-    private MathTransform getTransformGeometry(Layer destLayerCRS, Layer originLayerCRS)
+    private MathTransform getTransformGeometry(Layer originLayerCRS, Layer destLayerCRS)
     {
-        CoordinateReferenceSystem beatCRS = destLayerCRS.getFeatureSource().getSchema().getCoordinateReferenceSystem();
-        CoordinateReferenceSystem lineCRS = originLayerCRS.getFeatureSource().getSchema().getCoordinateReferenceSystem();
+        CoordinateReferenceSystem originCRS = originLayerCRS.getFeatureSource().getSchema().getCoordinateReferenceSystem();
+        CoordinateReferenceSystem destCRS = destLayerCRS.getFeatureSource().getSchema().getCoordinateReferenceSystem();
         MathTransform transform= null;
         try {
-            transform = CRS.findMathTransform(lineCRS, beatCRS, true);
+            transform = CRS.findMathTransform(originCRS, destCRS, true);
         } catch (FactoryException e) {
             e.printStackTrace();
         }
         return transform;
-    }
-
-    private double getArea(Geometry lineGeometry, GeomType type)
-    {
-        switch (type)
-        {
-            case POLYGON:
-                return lineGeometry.getArea();
-            case LINE:
-                return lineGeometry.getLength();
-            case POINT:
-                return 1;
-        }
-
-        return 0;
     }
 
     private double getIntersectionValue(GeomType type, Beat currBeat,
@@ -278,6 +265,57 @@ public class Model extends SimpleModel
 
     }
 
+    private SimpleFeatureCollection getCollidingFeature(Geometry beatGeometry, Layer layer,
+                                                        CoordinateReferenceSystem ref)
+    {
+        Envelope envelopeInternal = beatGeometry.getEnvelopeInternal();
+        ReferencedEnvelope referencedEnvelope = new ReferencedEnvelope(ref);
+        referencedEnvelope.expandToInclude(envelopeInternal);
+        try
+        {
+            return grabFeaturesInBoundingBox(referencedEnvelope, layer);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public int TestCompare(double vC,
+                           GeomType type,
+                           Beat currBeat,
+                           Layer layer,
+                           Geometry beatGeometry)
+    {
+        int numberOfFeatures = 0;
+        FeatureIterator<?> layerIter = null;
+        try
+        {
+            layerIter = layer.getFeatureSource().getFeatures().features();
+
+            double v = 0;
+            while (layerIter.hasNext())
+            {
+
+                SimpleFeature lineFeature = (SimpleFeature) layerIter.next();
+                Geometry lineGeometry = (Geometry) lineFeature.getDefaultGeometry();
+                v += getIntersectionValue(type, currBeat, layer, lineGeometry, beatGeometry);
+            }
+
+            if (v != vC)
+            {
+                System.out.println("Difference: " + "            " + v + "  " + vC);
+            }
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+            return 0;
+        }
+        return numberOfFeatures;
+    }
+
     public LinkedList<Beat> calculate(Layer layer)
     {
         GeomType type = getGeometryType(layer);
@@ -288,36 +326,45 @@ public class Model extends SimpleModel
         if (beatLayer == null || beatLayer == layer)
             return beats;
 
-        SimpleFeatureIterator linefeatures=null;
-        SimpleFeatureIterator simpleFeatureIterator=null;
+        SimpleFeatureIterator layerIter=null;
+        SimpleFeatureIterator beatIter=null;
         AreaFunction areaFunction = new AreaFunction();
         Beat currBeat;
 
         MathTransform mathTransform = getTransformGeometry(beatLayer, layer);
 
+
+        CoordinateReferenceSystem beatCRS = layer.getFeatureSource()
+                                                  .getSchema()
+                                                  .getCoordinateReferenceSystem();
+        CoordinateReferenceSystem layerCRS = layer.getFeatureSource()
+                                                                       .getSchema()
+                                                                       .getCoordinateReferenceSystem();
+
         try {
-            simpleFeatureIterator= (SimpleFeatureIterator) beatLayer.getFeatureSource().getFeatures().features();
-            while (simpleFeatureIterator.hasNext())
+            beatIter= (SimpleFeatureIterator) beatLayer.getFeatureSource().getFeatures().features();
+            while (beatIter.hasNext())
             {
-                SimpleFeature next = simpleFeatureIterator.next();
-                Geometry beatGeometry = (Geometry) next.getDefaultGeometry();
-                linefeatures = (SimpleFeatureIterator) layer.getFeatureSource().getFeatures().features();
+                SimpleFeature next = beatIter.next();
+                Geometry tempBeatGeometry = (Geometry) next.getDefaultGeometry();
+                Geometry beatGeometry = JTS.transform(tempBeatGeometry, mathTransform);
+
+                layerIter = getCollidingFeature(beatGeometry, layer, layerCRS).features();
                 currBeat = new Beat(next.getID());
                 currBeat.setArea(areaFunction.getArea(beatGeometry));
 
                 double v = 0;
-                double totalArea = 0;
-                while (linefeatures.hasNext())
+                while (layerIter.hasNext())
                 {
-                    SimpleFeature lineFeature=linefeatures.next();
-                    Geometry temp= (Geometry) lineFeature.getDefaultGeometry();
-                    Geometry lineGeometry = JTS.transform(temp, mathTransform);
+                    SimpleFeature lineFeature=layerIter.next();
+                    Geometry lineGeometry = (Geometry) lineFeature.getDefaultGeometry();
 
-                    totalArea += getArea(lineGeometry, type);
                     v += getIntersectionValue(type, currBeat, layer, lineGeometry, beatGeometry);
                 }
-                currBeat.setValue(v/totalArea);
-                linefeatures.close();
+                //TestCompare(v, type, currBeat, layer, beatGeometry);
+
+                currBeat.setValue(v);
+                layerIter.close();
                 beats.add(currBeat);
             }
         } catch (IOException | TransformException e) {
@@ -325,8 +372,7 @@ public class Model extends SimpleModel
         }
         finally
         {
-            simpleFeatureIterator.close();
-            linefeatures.close();
+            beatIter.close();
         }
 
         return beats;
