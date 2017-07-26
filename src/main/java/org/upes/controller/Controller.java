@@ -1,10 +1,13 @@
 package org.upes.controller;
 
 import com.vividsolutions.jts.geom.Geometry;
-import org.geotools.data.FeatureSource;
+import org.geotools.data.DataStore;
+import org.geotools.data.DataUtilities;
+import org.geotools.data.FileDataStoreFactorySpi;
+import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
-import org.geotools.factory.CommonFactoryFinder;
+import org.geotools.feature.SchemaException;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.FeatureLayer;
 import org.geotools.map.Layer;
@@ -13,16 +16,16 @@ import org.geotools.styling.Style;
 import org.geotools.swing.event.MapMouseEvent;
 import org.geotools.swing.event.MapMouseListener;
 import org.opengis.feature.simple.SimpleFeature;
-import org.opengis.feature.type.FeatureType;
-import org.opengis.filter.Filter;
-import org.opengis.filter.FilterFactory2;
+import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.identity.FeatureId;
-import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.upes.Constants;
 import org.upes.model.Classification;
-import org.upes.model.Model;
+import org.upes.model.ComputeModel;
 import org.upes.model.MyTableModel;
 import org.upes.model.RuleEntry;
+import org.upes.utils.MapServer;
+import org.upes.utils.ZipFile;
+import org.upes.utils.ZipMem;
 import org.upes.view.MapPanel;
 import org.upes.view.View;
 
@@ -34,6 +37,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
@@ -44,9 +48,9 @@ import java.util.List;
  */
 public class Controller
 {
-    private View     view;
-    private MapPanel mapPanel;
-    private Model    model;
+    private View         view;
+    private MapPanel     mapPanel;
+    private ComputeModel computeModel;
 
     private LoadAction    loadAction    = new LoadAction();
     private AddAction     addAction     = new AddAction();
@@ -55,16 +59,20 @@ public class Controller
     private OkClassificationAction okClassification =new OkClassificationAction();
     private MyTableListener tableListener = new MyTableListener();
     private CalcAction calcAction=new CalcAction();
+    private ShareAction shareAction = new ShareAction();
 
-    public Controller(View view, Model model)
+    protected MapServer mapServer;
+
+    public Controller(View view, ComputeModel computeModel)
     {
         this.view = view;
         this.mapPanel = view.mapPanel;
-        this.model = model;
+        this.computeModel = computeModel;
 
         // Set actions
         mapPanel.loadButton.setAction(loadAction);
         mapPanel.addButton.setAction(addAction);
+        mapPanel.shareButton.setAction(shareAction);
         view.layerDialog.okButton.setAction(okLayerAction);
         mapPanel.deleteButton.setAction(deleteAction);
         view.optionsDialog.ok.setAction(okClassification);
@@ -79,13 +87,13 @@ public class Controller
                 mapPanel.toolBar.getComponentAtIndex(i).setEnabled(false);
         }
         // Link map content
-        mapPanel.mapPane.setMapContent(model.getMap());
+        mapPanel.mapPane.setMapContent(computeModel.getMap());
         view.layerDialog.mapLayerTable.setMapPane(view.mapPanel.mapPane);
 
         // Link Table
-        view.mapPanel.table.setModel(model.getTableModel());
+        view.mapPanel.table.setModel(computeModel.getTableModel());
 
-        Classification classification = model.getClassification();
+        Classification classification = computeModel.getClassification();
         view.mapPanel.classificationView.neutralList.setModel(classification.getNeutral());
         view.mapPanel.classificationView.supportiveList.setModel(classification.getSupportive());
         view.mapPanel.classificationView.defectiveList.setModel(classification.getDefective());
@@ -93,6 +101,17 @@ public class Controller
         // Add listener
         mapPanel.mapPane.addMouseListener(new MouseMapListener());
         mapPanel.table.getSelectionModel().addListSelectionListener(tableListener);
+
+        try
+        {
+            mapServer = new MapServer(Constants.SERVER_PORT);
+            mapServer.addContext("/", new ShapeFileHandler());
+            mapServer.start();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
     }
 
     private class AddAction extends AbstractAction {
@@ -105,7 +124,7 @@ public class Controller
         @Override
         public void actionPerformed(ActionEvent actionEvent)
         {
-            JFileChooser chooser=new JFileChooser(model.getInitPath());
+            JFileChooser chooser=new JFileChooser(computeModel.getInitPath());
             FileFilter filter = new FileNameExtensionFilter("ESRI Shapefile(*.shp)","shp");
             chooser.setFileFilter(filter);
             int result=chooser.showOpenDialog(view);
@@ -124,7 +143,7 @@ public class Controller
             Layer layer = null;
             try
             {
-                layer = model.loadFile(sourceFile);
+                layer = computeModel.loadFile(sourceFile);
             }
             catch (IOException e)
             {
@@ -132,8 +151,8 @@ public class Controller
                         JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            model.addToClassification(selectedOption, layer);
-            model.setInitPath(sourceFile.getParent());
+            computeModel.addToClassification(selectedOption, layer);
+            computeModel.setInitPath(sourceFile.getParent());
             repaint();
 
         }
@@ -148,7 +167,7 @@ public class Controller
         @Override
         public void actionPerformed(ActionEvent actionEvent)
         {
-            JFileChooser chooser=new JFileChooser(model.getInitPath());
+            JFileChooser chooser=new JFileChooser(computeModel.getInitPath());
             FileFilter filter = new FileNameExtensionFilter("ESRI Shapefile(*.shp)","shp");
             chooser.setFileFilter(filter);
             int resullt=chooser.showOpenDialog(view);
@@ -162,7 +181,7 @@ public class Controller
 
             try
             {
-                model.loadFile(sourceFile);
+                computeModel.loadFile(sourceFile);
             }
             catch (IOException e)
             {
@@ -171,7 +190,7 @@ public class Controller
                 return;
             }
 
-            model.setInitPath(sourceFile.getParent());
+            computeModel.setInitPath(sourceFile.getParent());
             addAction.setEnabled(true);
             deleteAction.setEnabled(true);
             loadAction.setEnabled(false);
@@ -242,7 +261,7 @@ public class Controller
             {
                 if (!layers.contains(oldLayer))
                 {
-                    model.removeLayer(oldLayer);
+                    computeModel.removeLayer(oldLayer);
                 }
             }
         }
@@ -257,34 +276,18 @@ public class Controller
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            model.calculateForAll();
+            computeModel.calculateForAll();
         }
     }
 
     private class MouseMapListener implements MapMouseListener
     {
 
-        SimpleFeatureCollection grabFeaturesInBoundingBox(MapMouseEvent ev)
-                throws Exception
+        SimpleFeatureCollection grabFeaturesInMouseBox(MapMouseEvent ev) throws Exception
         {
-            FilterFactory2 ff     = CommonFactoryFinder.getFilterFactory2();
-            Layer beatLayer = model.getLayer("BEAT");
-            if (beatLayer==null)
-                return null ;
-
-            FeatureSource<?, ?> featureSource = beatLayer.getFeatureSource();
-            FeatureType    schema = featureSource.getSchema();
-
-            // usually "THE_GEOM" for shapefiles
-            String geometryPropertyName = schema.getGeometryDescriptor().getLocalName();
-            CoordinateReferenceSystem targetCRS = mapPanel.mapPane.getMapContent().getCoordinateReferenceSystem();
-
             ReferencedEnvelope bbox = ev.getEnvelopeByPixels(2);
-
-            Filter filter = ff.bbox(ff.property(geometryPropertyName), bbox);
-            return (SimpleFeatureCollection) featureSource.getFeatures(filter);
+            return computeModel.grabFeaturesInBoundingBox(bbox, computeModel.getLayer("BEAT"));
         }
-
 
         @Override
         public void onMouseClicked(MapMouseEvent mapMouseEvent)
@@ -321,7 +324,7 @@ public class Controller
           if(ev.getSource().getCursorTool()==null)
            {
                try {
-                   SimpleFeatureCollection simpleFeatureCollection = grabFeaturesInBoundingBox(ev);
+                   SimpleFeatureCollection simpleFeatureCollection = grabFeaturesInMouseBox(ev);
                    if (simpleFeatureCollection==null)
                        return;
                    SimpleFeatureIterator features = simpleFeatureCollection.features();
@@ -332,7 +335,7 @@ public class Controller
                        if (fa.getName().toString().equals("BEAT"))
                        {
                            int col_index = view.mapPanel.table.getColumn("BEAT_N").getModelIndex();
-                           MyTableModel tableModel = (MyTableModel) model.getTableModel();
+                           MyTableModel tableModel = (MyTableModel) computeModel.getTableModel();
                            int index = -1;
 
                            int startIndex = tableModel.getLayerStartIndex("BEAT");
@@ -386,15 +389,44 @@ public class Controller
         }
     }
 
+    private class ShareAction extends AbstractAction
+    {
 
+        public ShareAction()
+        {
+            super("Share");
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent actionEvent)
+        {
+            Collection<String> sourceLayers = computeModel.getSourceLayers();
+
+            ZipFile zip = null;
+            try
+            {
+                zip = new ZipFile("test.zip");
+                for (String sourceLayer : sourceLayers)
+                {
+                    zip.addAllFilesSameName("", sourceLayer);
+                }
+                zip.close();
+            }
+            catch (FileNotFoundException e)
+            {
+                e.printStackTrace();
+            }
+
+        }
+    }
 
     public void updateSelectedLayers()
     {
-        Layer        beatLayer    = model.getLayer("BEAT");
+        Layer        beatLayer    = computeModel.getLayer("BEAT");
         if (beatLayer == null)
             return;
 
-        MyTableModel tableModel   = (MyTableModel) model.getTableModel();
+        MyTableModel tableModel   = (MyTableModel) computeModel.getTableModel();
         int[]        selectedRows = mapPanel.table.getSelectedRows();
         int          column       = tableModel.getColumn("BEAT_N");
         int          startBeat    = tableModel.getLayerStartIndex("BEAT");
@@ -409,7 +441,7 @@ public class Controller
             if (selectedRow >= startBeat && selectedRow < endBeat)
             {
                 // Get layer feature
-                SimpleFeature featureFast = (SimpleFeature) model.findFeature(beatLayer, "BEAT_N", (String) valueAt);
+                SimpleFeature featureFast = (SimpleFeature) computeModel.findFeature(beatLayer, "BEAT_N", (String) valueAt);
 
                 // Change color of this feature
                 selectedFeatures.add(featureFast.getIdentifier());
@@ -427,9 +459,9 @@ public class Controller
         RuleEntry selectedEntry = new RuleEntry(Color.BLACK, Color.RED, 1.2);
 
         if (IDs.isEmpty())
-            style = model.createDefaultStyle(defaultEntry, geometryAttributeName);
+            style = computeModel.createDefaultStyle(defaultEntry, geometryAttributeName);
         else
-            style = model.createSelectedStyle(defaultEntry, selectedEntry, IDs, geometryAttributeName);
+            style = computeModel.createSelectedStyle(defaultEntry, selectedEntry, IDs, geometryAttributeName);
 
         ((FeatureLayer) layer).setStyle(style);
         repaint();
@@ -443,5 +475,38 @@ public class Controller
     public MapContent getMap()
     {
         return mapPanel.mapPane.getMapContent();
+    }
+
+    public void createFile(String fileName, String type) throws IOException, SchemaException
+    {
+        FileDataStoreFactorySpi factory = new ShapefileDataStoreFactory();
+
+        File file = new File(fileName);
+        Map map = Collections.singletonMap( "url", file.toURI().toURL() );
+
+        DataStore myData = factory.createNewDataStore(map);
+        SimpleFeatureType featureType =
+                DataUtilities.createType("my", "geom:" + type + ",name:String,age:Integer,description:String");
+        myData.createSchema( featureType );
+    }
+
+
+
+    private class ShapeFileHandler implements com.sun.net.httpserver.HttpHandler
+    {
+        @Override
+        public void handle(com.sun.net.httpserver.HttpExchange httpExchange) throws IOException
+        {
+            Collection<String> sourceLayers = computeModel.getSourceLayers();
+            ZipMem             zipMem       = new ZipMem();
+            for (String sourceLayer : sourceLayers)
+            {
+                zipMem.addAllFilesSameName("", sourceLayer);
+            }
+            zipMem.close();
+
+            System.out.println("Request file " + " shapes.zip");
+            MapServer.sendObject(zipMem.toByteArray(), "shapes.zip", httpExchange);
+        }
     }
 }

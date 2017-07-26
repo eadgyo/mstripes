@@ -1,11 +1,8 @@
 package org.upes;
 
-import org.geotools.image.ImageWorker;
 import org.upes.controller.Controller;
-import org.upes.model.Model;
+import org.upes.model.ComputeModel;
 import org.upes.view.View;
-
-import java.awt.*;
 
 /**
  * Created by eadgyo on 27/06/17.
@@ -15,8 +12,8 @@ public class Application
     // View
     private View view;
 
-    // Model
-    private Model model;
+    // ComputeModel
+    private ComputeModel computeModel;
 
     // Controller
     private Controller controller;
@@ -25,8 +22,8 @@ public class Application
     {
 
         view = new View();
-        model = new Model();
-        controller = new Controller(view, model);
+        computeModel = new ComputeModel();
+        controller = new Controller(view, computeModel);
         view.optionsDialog.pack();
         launchApp();
 

@@ -1,8 +1,10 @@
 package org.upes.model;
 
 import com.vividsolutions.jts.geom.Geometry;
+import org.geotools.data.FeatureSource;
 import org.geotools.data.FileDataStore;
 import org.geotools.data.FileDataStoreFinder;
+import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.factory.CommonFactoryFinder;
@@ -17,8 +19,11 @@ import org.opengis.feature.Feature;
 import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.feature.type.FeatureType;
+import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.filter.identity.FeatureId;
+import org.opengis.geometry.BoundingBox;
 import org.upes.Constants;
 import org.upes.MyStyleFactory;
 import org.upes.PersonalConstants;
@@ -27,9 +32,7 @@ import javax.swing.table.TableModel;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.Vector;
+import java.util.*;
 
 /**
  * Created by eadgyo on 12/07/17.
@@ -49,6 +52,8 @@ public class SimpleModel
 
     protected StyleFactory   sf = CommonFactoryFinder.getStyleFactory();
     protected FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
+
+    protected HashMap<String, String> layerToSourcePath = new HashMap<>();
 
     public SimpleModel()
     {
@@ -108,6 +113,7 @@ public class SimpleModel
             {
                 classification.getDefective().removeElement(layer.getTitle());
             }
+            layerToSourcePath.remove(layer.getTitle());
         }
     }
 
@@ -155,6 +161,8 @@ public class SimpleModel
 
             checkLayer(addedLayer);
         }
+
+        layerToSourcePath.put(addedLayer.getTitle(), sourceFile.getPath());
 
         return addedLayer;
     }
@@ -330,5 +338,28 @@ public class SimpleModel
         {
             classification.addDefective(layer);
         }
+    }
+
+    public SimpleFeatureCollection grabFeaturesInBoundingBox(BoundingBox bbox, Layer layer)
+            throws Exception
+    {
+        if (layer==null)
+            return null ;
+
+        FilterFactory2 ff     = CommonFactoryFinder.getFilterFactory2();
+
+        FeatureSource<?, ?> featureSource = layer.getFeatureSource();
+        FeatureType         schema        = featureSource.getSchema();
+
+        // usually "THE_GEOM" for shapefiles
+        String                    geometryPropertyName = schema.getGeometryDescriptor().getLocalName();
+
+        Filter filter = ff.bbox(ff.property(geometryPropertyName), bbox);
+        return (SimpleFeatureCollection) featureSource.getFeatures(filter);
+    }
+
+    public Collection<String> getSourceLayers()
+    {
+        return layerToSourcePath.values();
     }
 }
