@@ -207,6 +207,7 @@ public class ComputeModel extends SimpleModel
     public void calculateForAll()
     {
         Iterator<Layer> iterator = map.layers().iterator();
+        LinkedList<Beat> result = null;
         while (iterator.hasNext())
         {
             Layer next = iterator.next();
@@ -217,12 +218,26 @@ public class ComputeModel extends SimpleModel
                        classification.getSupportive().contains(next.getFeatureSource().getName().toString()))
             {
                 LinkedList<Beat> calculate = calculate(next);
-                System.out.println(next.getTitle());
-//                CalculateCostFactor(calculate,next);
-                for (Beat beat : calculate) {
-                    System.out.println("For ID" + beat.getId() + "  Score --> " + beat.getScore());
+                if (result == null)
+                {
+                    result = calculate;
+                }
+                else
+                {
+                    Iterator<Beat> iterRes = result.iterator();
+                    Iterator<Beat> iterCalc = calculate.iterator();
+
+                    while (iterCalc.hasNext())
+                    {
+                        Beat beatCalc = iterCalc.next();
+                        Beat beatRes = iterRes.next();
+                        beatRes.addScore(next.getTitle(), beatCalc.getScore());
+                    }
                 }
             }
+        }
+        for (Beat beat : result) {
+            System.out.println("For ID" + beat.getId() + "  Score --> " + beat.getScore());
         }
     }
 
