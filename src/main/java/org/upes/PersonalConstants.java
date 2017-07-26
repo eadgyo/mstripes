@@ -5,5 +5,5 @@ package org.upes;
  */
 public interface PersonalConstants
 {
-    String INIT_PATH = "/home/ronan-j/Documents/Basemaps/";
+    String INIT_PATH = "F:/intern/Basemaps/";
 }

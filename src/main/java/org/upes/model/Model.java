@@ -254,30 +254,17 @@ public class Model extends SimpleModel
                 currBeat=new Beat(next.getID());
                 transform= CRS.findMathTransform(lineCRS,beatCRS,true);
                 currBeat.setArea(areaFunction.getArea(beatGeometry));
-                int id=0;
                 double v=0;
-                double totalArea=0;
+
                 while (linefeatures.hasNext())
                 {
                     SimpleFeature lineFeature=linefeatures.next();
                     Geometry temp=(Geometry) lineFeature.getDefaultGeometry();
                     Geometry lineGeometry = JTS.transform(temp,transform);
 
-                    switch (type)
-                    {
-                        case POLYGON:
-                            totalArea+=lineGeometry.getArea();
-                            break;
-                        case LINE:
-                            totalArea+=lineGeometry.getLength();
-                            break;
-                        case POINT:
-                            totalArea=1;
-                    }
                     if (beatGeometry.intersects(lineGeometry))
                     {
                         Geometry intersection = lineGeometry.intersection(beatGeometry);
-                        id++;
                         switch (type)
                         {
                             case POLYGON:
@@ -295,7 +282,7 @@ public class Model extends SimpleModel
                         }
                     }
                 }
-                currBeat.setValue(v/totalArea);
+                currBeat.setValue(v);
                 linefeatures.close();
                 beats.add(currBeat);
             }
