@@ -1,25 +1,12 @@
 package org.upes.utils;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-public class ZipCreator
+public abstract class ZipCreator
 {
-    List<String> fileList;
-
-    private FileOutputStream fos;
-    private ZipOutputStream  zos;
-
-    public ZipCreator(String zipFile) throws FileNotFoundException
-    {
-        fileList = new ArrayList<String>();
-
-        fos = new FileOutputStream(zipFile);
-        zos = new ZipOutputStream(fos);
-    }
+    protected ZipOutputStream  zos;
 
     public static byte[] serialize(Object obj) throws IOException
     {
@@ -33,15 +20,15 @@ public class ZipCreator
         }
     }
 
-    public void addFile(String fileName, String filePath)
+    public void addFile(String pathInZip, String filePath)
     {
         byte[] buffer = new byte[1024];
-        ZipEntry ze = new ZipEntry(fileName);
+        ZipEntry ze = new ZipEntry(pathInZip);
         try
         {
             zos.putNextEntry(ze);
             FileInputStream in =
-                    new FileInputStream( filePath);
+                    new FileInputStream(filePath);
 
             int len;
             while ((len = in.read(buffer)) > 0)
@@ -55,13 +42,11 @@ public class ZipCreator
         {
             e.printStackTrace();
         }
-
-
     }
 
-    public void addObject(String fileName, Object obj)
+    public void addObject(String pathInZip, Object obj)
     {
-        ZipEntry ze = new ZipEntry(fileName);
+        ZipEntry ze = new ZipEntry(pathInZip);
         try
         {
             zos.putNextEntry(ze);

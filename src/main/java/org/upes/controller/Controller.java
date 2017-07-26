@@ -20,11 +20,11 @@ import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.identity.FeatureId;
 import org.upes.Constants;
 import org.upes.model.Classification;
-import org.upes.model.Model;
+import org.upes.model.ComputeModel;
 import org.upes.model.MyTableModel;
 import org.upes.model.RuleEntry;
 import org.upes.utils.MapServer;
-import org.upes.utils.ZipCreator;
+import org.upes.utils.ZipMem;
 import org.upes.view.MapPanel;
 import org.upes.view.View;
 
@@ -38,7 +38,6 @@ import javax.xml.ws.spi.http.HttpHandler;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
@@ -49,9 +48,9 @@ import java.util.List;
  */
 public class Controller
 {
-    private View     view;
-    private MapPanel mapPanel;
-    private Model    model;
+    private View         view;
+    private MapPanel     mapPanel;
+    private ComputeModel computeModel;
 
     private LoadAction    loadAction    = new LoadAction();
     private AddAction     addAction     = new AddAction();
@@ -64,11 +63,11 @@ public class Controller
 
     protected MapServer mapServer;
 
-    public Controller(View view, Model model)
+    public Controller(View view, ComputeModel computeModel)
     {
         this.view = view;
         this.mapPanel = view.mapPanel;
-        this.model = model;
+        this.computeModel = computeModel;
 
         // Set actions
         mapPanel.loadButton.setAction(loadAction);
@@ -88,13 +87,13 @@ public class Controller
                 mapPanel.toolBar.getComponentAtIndex(i).setEnabled(false);
         }
         // Link map content
-        mapPanel.mapPane.setMapContent(model.getMap());
+        mapPanel.mapPane.setMapContent(computeModel.getMap());
         view.layerDialog.mapLayerTable.setMapPane(view.mapPanel.mapPane);
 
         // Link Table
-        view.mapPanel.table.setModel(model.getTableModel());
+        view.mapPanel.table.setModel(computeModel.getTableModel());
 
-        Classification classification = model.getClassification();
+        Classification classification = computeModel.getClassification();
         view.mapPanel.classificationView.neutralList.setModel(classification.getNeutral());
         view.mapPanel.classificationView.supportiveList.setModel(classification.getSupportive());
         view.mapPanel.classificationView.defectiveList.setModel(classification.getDefective());
@@ -124,7 +123,7 @@ public class Controller
         @Override
         public void actionPerformed(ActionEvent actionEvent)
         {
-            JFileChooser chooser=new JFileChooser(model.getInitPath());
+            JFileChooser chooser=new JFileChooser(computeModel.getInitPath());
             FileFilter filter = new FileNameExtensionFilter("ESRI Shapefile(*.shp)","shp");
             chooser.setFileFilter(filter);
             int result=chooser.showOpenDialog(view);
@@ -143,7 +142,7 @@ public class Controller
             Layer layer = null;
             try
             {
-                layer = model.loadFile(sourceFile);
+                layer = computeModel.loadFile(sourceFile);
             }
             catch (IOException e)
             {
@@ -151,8 +150,8 @@ public class Controller
                         JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            model.addToClassification(selectedOption, layer);
-            model.setInitPath(sourceFile.getParent());
+            computeModel.addToClassification(selectedOption, layer);
+            computeModel.setInitPath(sourceFile.getParent());
             repaint();
 
         }
@@ -167,7 +166,7 @@ public class Controller
         @Override
         public void actionPerformed(ActionEvent actionEvent)
         {
-            JFileChooser chooser=new JFileChooser(model.getInitPath());
+            JFileChooser chooser=new JFileChooser(computeModel.getInitPath());
             FileFilter filter = new FileNameExtensionFilter("ESRI Shapefile(*.shp)","shp");
             chooser.setFileFilter(filter);
             int resullt=chooser.showOpenDialog(view);
@@ -181,7 +180,7 @@ public class Controller
 
             try
             {
-                model.loadFile(sourceFile);
+                computeModel.loadFile(sourceFile);
             }
             catch (IOException e)
             {
@@ -190,7 +189,7 @@ public class Controller
                 return;
             }
 
-            model.setInitPath(sourceFile.getParent());
+            computeModel.setInitPath(sourceFile.getParent());
             addAction.setEnabled(true);
             deleteAction.setEnabled(true);
             loadAction.setEnabled(false);
@@ -261,7 +260,7 @@ public class Controller
             {
                 if (!layers.contains(oldLayer))
                 {
-                    model.removeLayer(oldLayer);
+                    computeModel.removeLayer(oldLayer);
                 }
             }
         }
@@ -276,7 +275,7 @@ public class Controller
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            model.calculateForAll();
+            computeModel.calculateForAll();
         }
     }
 
@@ -286,7 +285,7 @@ public class Controller
         SimpleFeatureCollection grabFeaturesInMouseBox(MapMouseEvent ev) throws Exception
         {
             ReferencedEnvelope bbox = ev.getEnvelopeByPixels(2);
-            return model.grabFeaturesInBoundingBox(bbox, model.getLayer("BEAT"));
+            return computeModel.grabFeaturesInBoundingBox(bbox, computeModel.getLayer("BEAT"));
         }
 
         @Override
@@ -335,7 +334,7 @@ public class Controller
                        if (fa.getName().toString().equals("BEAT"))
                        {
                            int col_index = view.mapPanel.table.getColumn("BEAT_N").getModelIndex();
-                           MyTableModel tableModel = (MyTableModel) model.getTableModel();
+                           MyTableModel tableModel = (MyTableModel) computeModel.getTableModel();
                            int index = -1;
 
                            int startIndex = tableModel.getLayerStartIndex("BEAT");
@@ -399,31 +398,24 @@ public class Controller
         @Override
         public void actionPerformed(ActionEvent actionEvent)
         {
-            Collection<String> sourceLayers = model.getSourceLayers();
-            try
-            {
-                ZipCreator zip = new ZipCreator("test.zip");
-                for (String sourceLayer : sourceLayers)
-                {
-                    zip.addFile(sourceLayer, sourceLayer);
-                }
-                zip.close();
-            }
-            catch (FileNotFoundException e)
-            {
-                e.printStackTrace();
-            }
+            Collection<String> sourceLayers = computeModel.getSourceLayers();
 
+            ZipMem zip = new ZipMem();
+            for (String sourceLayer : sourceLayers)
+            {
+                zip.addFile(sourceLayer, sourceLayer);
+            }
+            zip.close();
         }
     }
 
     public void updateSelectedLayers()
     {
-        Layer        beatLayer    = model.getLayer("BEAT");
+        Layer        beatLayer    = computeModel.getLayer("BEAT");
         if (beatLayer == null)
             return;
 
-        MyTableModel tableModel   = (MyTableModel) model.getTableModel();
+        MyTableModel tableModel   = (MyTableModel) computeModel.getTableModel();
         int[]        selectedRows = mapPanel.table.getSelectedRows();
         int          column       = tableModel.getColumn("BEAT_N");
         int          startBeat    = tableModel.getLayerStartIndex("BEAT");
@@ -438,7 +430,7 @@ public class Controller
             if (selectedRow >= startBeat && selectedRow < endBeat)
             {
                 // Get layer feature
-                SimpleFeature featureFast = (SimpleFeature) model.findFeature(beatLayer, "BEAT_N", (String) valueAt);
+                SimpleFeature featureFast = (SimpleFeature) computeModel.findFeature(beatLayer, "BEAT_N", (String) valueAt);
 
                 // Change color of this feature
                 selectedFeatures.add(featureFast.getIdentifier());
@@ -456,9 +448,9 @@ public class Controller
         RuleEntry selectedEntry = new RuleEntry(Color.BLACK, Color.RED, 1.2);
 
         if (IDs.isEmpty())
-            style = model.createDefaultStyle(defaultEntry, geometryAttributeName);
+            style = computeModel.createDefaultStyle(defaultEntry, geometryAttributeName);
         else
-            style = model.createSelectedStyle(defaultEntry, selectedEntry, IDs, geometryAttributeName);
+            style = computeModel.createSelectedStyle(defaultEntry, selectedEntry, IDs, geometryAttributeName);
 
         ((FeatureLayer) layer).setStyle(style);
         repaint();

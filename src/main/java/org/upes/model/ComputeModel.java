@@ -31,7 +31,7 @@ import java.util.Vector;
 /**
  * Created by eadgyo on 27/06/17.
  */
-public class Model extends SimpleModel
+public class ComputeModel extends SimpleModel
 {
 
     private enum GeomType {
