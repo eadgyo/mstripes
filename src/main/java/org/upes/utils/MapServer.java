@@ -30,7 +30,7 @@ public class MapServer
         this.port = port;
     }
 
-    protected void start()
+    public void start()
     {
         server.start();
     }

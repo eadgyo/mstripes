@@ -24,6 +24,7 @@ import org.upes.model.ComputeModel;
 import org.upes.model.MyTableModel;
 import org.upes.model.RuleEntry;
 import org.upes.utils.MapServer;
+import org.upes.utils.ZipFile;
 import org.upes.utils.ZipMem;
 import org.upes.view.MapPanel;
 import org.upes.view.View;
@@ -33,11 +34,10 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.xml.ws.spi.http.HttpExchange;
-import javax.xml.ws.spi.http.HttpHandler;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
@@ -105,7 +105,8 @@ public class Controller
         try
         {
             mapServer = new MapServer(Constants.SERVER_PORT);
-
+            mapServer.addContext("/", new ShapeFileHandler());
+            mapServer.start();
         }
         catch (IOException e)
         {
@@ -390,6 +391,7 @@ public class Controller
 
     private class ShareAction extends AbstractAction
     {
+
         public ShareAction()
         {
             super("Share");
@@ -400,12 +402,21 @@ public class Controller
         {
             Collection<String> sourceLayers = computeModel.getSourceLayers();
 
-            ZipMem zip = new ZipMem();
-            for (String sourceLayer : sourceLayers)
+            ZipFile zip = null;
+            try
             {
-                zip.addFile(sourceLayer, sourceLayer);
+                zip = new ZipFile("test.zip");
+                for (String sourceLayer : sourceLayers)
+                {
+                    zip.addAllFilesSameName("", sourceLayer);
+                }
+                zip.close();
             }
-            zip.close();
+            catch (FileNotFoundException e)
+            {
+                e.printStackTrace();
+            }
+
         }
     }
 
@@ -480,12 +491,22 @@ public class Controller
     }
 
 
-    public class ShapeFileHandler extends HttpHandler
+
+    private class ShapeFileHandler implements com.sun.net.httpserver.HttpHandler
     {
         @Override
-        public void handle(HttpExchange httpExchange) throws IOException
+        public void handle(com.sun.net.httpserver.HttpExchange httpExchange) throws IOException
         {
+            Collection<String> sourceLayers = computeModel.getSourceLayers();
+            ZipMem             zipMem       = new ZipMem();
+            for (String sourceLayer : sourceLayers)
+            {
+                zipMem.addAllFilesSameName("", sourceLayer);
+            }
+            zipMem.close();
 
+            System.out.println("Request file " + " shapes.zip");
+            MapServer.sendObject(zipMem.toByteArray(), "shapes.zip", httpExchange);
         }
     }
 }

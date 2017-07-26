@@ -1,6 +1,9 @@
 package org.upes.utils;
 
+import org.apache.commons.io.FilenameUtils;
+
 import java.io.*;
+import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -19,6 +22,44 @@ public abstract class ZipCreator
             return b.toByteArray();
         }
     }
+
+    public void addAllFilesSameName(String pathInZip, String fileName)
+    {
+        // Get the name of the file
+        String fileNameWithOutExt = FilenameUtils.getBaseName(fileName);
+
+        // Get parent path
+        File file = new File(fileName);
+        String parentPath = file.getParent();
+
+        // Retrieve all files with the same name in same folder
+        ArrayList<String> listOfFilesSameName = getListOfFilesSameName(parentPath, fileNameWithOutExt);
+        for (int i = 0; i < listOfFilesSameName.size(); i++)
+        {
+            String path = listOfFilesSameName.get(i);
+            String baseName = FilenameUtils.getName(path);
+            addFile(pathInZip + "/" + baseName, path);
+        }
+    }
+
+    public ArrayList<String> getListOfFilesSameName(String path, String name)
+    {
+        File   folder      = new File(path);
+        File[] listOfFiles = folder.listFiles();
+        ArrayList<String> listOfFilesSameName = new ArrayList<>();
+
+        for (int i = 0; i < listOfFiles.length; i++)
+        {
+            if (listOfFiles[i].isFile())
+            {
+                String fileNameWithOutExt = FilenameUtils.removeExtension(listOfFiles[i].getName());
+                if (fileNameWithOutExt.equals(name))
+                    listOfFilesSameName.add(listOfFiles[i].getPath());
+            }
+        }
+        return listOfFilesSameName;
+    }
+
 
     public void addFile(String pathInZip, String filePath)
     {
