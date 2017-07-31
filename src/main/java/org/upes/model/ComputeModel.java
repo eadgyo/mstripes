@@ -1,6 +1,7 @@
 package org.upes.model;
 
 import com.vividsolutions.jts.geom.*;
+import com.vividsolutions.jts.geom.Polygon;
 import org.geotools.data.FeatureSource;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
@@ -21,11 +22,11 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
 import org.upes.Constants;
+import org.upes.utils.CriticalGrid;
 
+import java.awt.*;
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Vector;
+import java.util.*;
 
 
 /**
@@ -39,6 +40,8 @@ public class ComputeModel extends SimpleModel
         LINE,
         POINT
     }
+
+    private LinkedList<Beat> scoreResult = null;
 
     @Override
     public void checkLayer(Layer addedLayer)
@@ -204,27 +207,42 @@ public class ComputeModel extends SimpleModel
         return beats;
     }
 
-    public void calculateForAll()
+    public LinkedList<Beat> getScoreResult()
+    {
+        return scoreResult;
+    }
+
+    public Map<String, Color> getBeatsColor()
+    {
+        Map<String, Color> colorMap = new HashMap<>();
+
+        for (Beat beat : scoreResult)
+        {
+            Color color = CriticalGrid.getColor(beat.getScore());
+            colorMap.put(beat.getId(), color);
+        }
+        return colorMap;
+    }
+
+    public void calculateScore()
     {
         Iterator<Layer> iterator = map.layers().iterator();
-        LinkedList<Beat> result = null;
         while (iterator.hasNext())
         {
             Layer next = iterator.next();
 
-            System.out.println();
             if(classification.getDefective().contains(next.getFeatureSource().getName().toString()) ||
                     classification.getNeutral().contains(next.getFeatureSource().getName().toString()) ||
                        classification.getSupportive().contains(next.getFeatureSource().getName().toString()))
             {
                 LinkedList<Beat> calculate = calculate(next);
-                if (result == null)
+                if (scoreResult == null)
                 {
-                    result = calculate;
+                    scoreResult = calculate;
                 }
                 else
                 {
-                    Iterator<Beat> iterRes = result.iterator();
+                    Iterator<Beat> iterRes = scoreResult.iterator();
                     Iterator<Beat> iterCalc = calculate.iterator();
 
                     while (iterCalc.hasNext())
@@ -236,7 +254,7 @@ public class ComputeModel extends SimpleModel
                 }
             }
         }
-        for (Beat beat : result) {
+        for (Beat beat : scoreResult) {
             System.out.println("For ID" + beat.getId() + "  Score --> " + beat.getScore());
         }
     }

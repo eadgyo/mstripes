@@ -14,7 +14,7 @@ import org.geotools.feature.FeatureIterator;
 import org.geotools.map.FeatureLayer;
 import org.geotools.map.Layer;
 import org.geotools.map.MapContent;
-import org.geotools.styling.*;
+import org.geotools.styling.Style;
 import org.opengis.feature.Feature;
 import org.opengis.feature.Property;
 import org.opengis.feature.simple.SimpleFeature;
@@ -22,17 +22,18 @@ import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.FeatureType;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
-import org.opengis.filter.identity.FeatureId;
 import org.opengis.geometry.BoundingBox;
 import org.upes.Constants;
 import org.upes.MyStyleFactory;
 import org.upes.PersonalConstants;
 
 import javax.swing.table.TableModel;
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Vector;
 
 /**
  * Created by eadgyo on 12/07/17.
@@ -50,8 +51,6 @@ public class SimpleModel
     protected Classification classification= new Classification();
     protected MyStyleFactory               myStyleFactory;
 
-    protected StyleFactory   sf = CommonFactoryFinder.getStyleFactory();
-    protected FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
 
     protected HashMap<String, String> layerToSourcePath = new HashMap<>();
 
@@ -67,15 +66,6 @@ public class SimpleModel
         return classification;
     }
 
-    public StyleFactory getSf()
-    {
-        return sf;
-    }
-
-    public FilterFactory2 getFf()
-    {
-        return ff;
-    }
 
     public String getInitPath()
     {
@@ -268,60 +258,6 @@ public class SimpleModel
             e.printStackTrace();
         }
         return null;
-    }
-
-    public Rule createRule(RuleEntry ruleEntry, String geomAttributeName)
-    {
-        return createRule(ruleEntry.outlineColor, ruleEntry.fillColor, ruleEntry.lineWidth, geomAttributeName);
-    }
-
-    public Rule createRule(Color outlineColor, Color fillColor, double lineWidth, String geometryAttributeName)
-    {
-        Symbolizer                  symbolizer = null;
-        Fill                        fill       = null;
-        org.geotools.styling.Stroke stroke     = sf.createStroke(ff.literal(outlineColor), ff.literal(lineWidth));
-
-        // Polygon type
-        fill = sf.createFill(ff.literal(fillColor), ff.literal(1.0));
-        symbolizer = sf.createPolygonSymbolizer(stroke, fill, geometryAttributeName);
-
-        Rule rule = sf.createRule();
-        rule.symbolizers().add(symbolizer);
-        return rule;
-    }
-
-    public Style createSelectedStyle(RuleEntry defaultEntry, RuleEntry selectedEntry, Set<FeatureId> IDs, String
-            geometryAttributeName)
-    {
-        Rule selectedRule = createRule(selectedEntry, geometryAttributeName);
-        selectedRule.setFilter(ff.id(IDs));
-
-        Rule otherRule = createRule(defaultEntry, geometryAttributeName);
-        otherRule.setElseFilter(true);
-
-        FeatureTypeStyle fts = sf.createFeatureTypeStyle();
-        fts.rules().add(selectedRule);
-        fts.rules().add(otherRule);
-
-        Style style = sf.createStyle();
-        style.featureTypeStyles().add(fts);
-        return style;
-    }
-
-    /**
-     * Create a default Style for feature display
-     * @param geometryAttributeName
-     */
-    public Style createDefaultStyle(RuleEntry ruleEntry, String geometryAttributeName)
-    {
-        Rule rule = createRule(ruleEntry, geometryAttributeName);
-
-        FeatureTypeStyle fts = sf.createFeatureTypeStyle();
-        fts.rules().add(rule);
-
-        Style style = sf.createStyle();
-        style.featureTypeStyles().add(fts);
-        return style;
     }
 
     public void addToClassification(int selectedOption, Layer layer)

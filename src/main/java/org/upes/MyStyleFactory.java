@@ -1,12 +1,10 @@
 package org.upes;
 
-import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.styling.SLD;
 import org.geotools.styling.Style;
 import org.opengis.feature.simple.SimpleFeatureType;
 
 import java.awt.*;
-import java.io.File;
 import java.util.ArrayList;
 
 /**
@@ -55,7 +53,7 @@ public class MyStyleFactory {
         pointLayers.add(new PointLayer("circle",Color.BLUE,Color.BLUE,0.8f,5));
    }
 
-    public Style getStyle(SimpleFeatureType ftype,Object l)
+    public Style getStyle(SimpleFeatureType ftype, Object l)
     {
         Style style=null;
         if (ftype.getGeometryDescriptor().getType().getName().toString().equals("MultiPolygon"))
@@ -134,7 +132,7 @@ class PointLayer
     private float opacity;
     private float size;
 
-    public PointLayer(String wellknownname,Color outline,Color fillcolor,float opacity, float size)
+    public PointLayer(String wellknownname, Color outline, Color fillcolor, float opacity, float size)
     {
         this.wellknownname=wellknownname;
         this.outline=outline;
@@ -207,3 +205,4 @@ class PolygonLayer
         return opacity;
     }
 }
+

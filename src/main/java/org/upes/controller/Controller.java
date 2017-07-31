@@ -24,7 +24,7 @@ import org.upes.model.ComputeModel;
 import org.upes.model.MyTableModel;
 import org.upes.model.RuleEntry;
 import org.upes.utils.MapServer;
-import org.upes.utils.ZipFile;
+import org.upes.utils.StyleUtils;
 import org.upes.utils.ZipMem;
 import org.upes.view.MapPanel;
 import org.upes.view.View;
@@ -37,7 +37,6 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
@@ -59,7 +58,6 @@ public class Controller
     private OkClassificationAction okClassification =new OkClassificationAction();
     private MyTableListener tableListener = new MyTableListener();
     private CalcAction calcAction=new CalcAction();
-    private ShareAction shareAction = new ShareAction();
 
     protected MapServer mapServer;
 
@@ -72,7 +70,6 @@ public class Controller
         // Set actions
         mapPanel.loadButton.setAction(loadAction);
         mapPanel.addButton.setAction(addAction);
-        mapPanel.shareButton.setAction(shareAction);
         view.layerDialog.okButton.setAction(okLayerAction);
         mapPanel.deleteButton.setAction(deleteAction);
         view.optionsDialog.ok.setAction(okClassification);
@@ -275,8 +272,10 @@ public class Controller
         }
 
         @Override
-        public void actionPerformed(ActionEvent e) {
-            computeModel.calculateForAll();
+        public void actionPerformed(ActionEvent e)
+        {
+            computeModel.calculateScore();
+            displayCriticalColor();
         }
     }
 
@@ -389,37 +388,6 @@ public class Controller
         }
     }
 
-    private class ShareAction extends AbstractAction
-    {
-
-        public ShareAction()
-        {
-            super("Share");
-        }
-
-        @Override
-        public void actionPerformed(ActionEvent actionEvent)
-        {
-            Collection<String> sourceLayers = computeModel.getSourceLayers();
-
-            ZipFile zip = null;
-            try
-            {
-                zip = new ZipFile("test.zip");
-                for (String sourceLayer : sourceLayers)
-                {
-                    zip.addAllFilesSameName("", sourceLayer);
-                }
-                zip.close();
-            }
-            catch (FileNotFoundException e)
-            {
-                e.printStackTrace();
-            }
-
-        }
-    }
-
     public void updateSelectedLayers()
     {
         Layer        beatLayer    = computeModel.getLayer("BEAT");
@@ -459,22 +427,24 @@ public class Controller
         RuleEntry selectedEntry = new RuleEntry(Color.BLACK, Color.RED, 1.2);
 
         if (IDs.isEmpty())
-            style = computeModel.createDefaultStyle(defaultEntry, geometryAttributeName);
+            style = StyleUtils.createDefaultStyle(defaultEntry, geometryAttributeName);
         else
-            style = computeModel.createSelectedStyle(defaultEntry, selectedEntry, IDs, geometryAttributeName);
+            style = StyleUtils.createSelectedStyle(defaultEntry, selectedEntry, IDs, geometryAttributeName);
 
         ((FeatureLayer) layer).setStyle(style);
         repaint();
     }
 
-    public void repaint()
+    public void displayCriticalColor()
     {
-        mapPanel.mapPane.repaint();
-    }
+        Layer        beatLayer    = computeModel.getLayer("BEAT");
+        if (beatLayer == null)
+            return;
+        String geometryAttributeName = beatLayer.getFeatureSource().getSchema().getGeometryDescriptor().getLocalName();
+        Style style = StyleUtils.createStyleFromCritical(computeModel.getScoreResult(), geometryAttributeName);
 
-    public MapContent getMap()
-    {
-        return mapPanel.mapPane.getMapContent();
+        ((FeatureLayer) beatLayer).setStyle(style);
+        repaint();
     }
 
     public void createFile(String fileName, String type) throws IOException, SchemaException
@@ -489,8 +459,6 @@ public class Controller
                 DataUtilities.createType("my", "geom:" + type + ",name:String,age:Integer,description:String");
         myData.createSchema( featureType );
     }
-
-
 
     private class ShapeFileHandler implements com.sun.net.httpserver.HttpHandler
     {
@@ -509,4 +477,15 @@ public class Controller
             MapServer.sendObject(zipMem.toByteArray(), "shapes.zip", httpExchange);
         }
     }
+
+    public void repaint()
+    {
+        mapPanel.mapPane.repaint();
+    }
+
+    public MapContent getMap()
+    {
+        return mapPanel.mapPane.getMapContent();
+    }
+
 }
