@@ -1,7 +1,6 @@
 package org.upes.model;
 
 import com.vividsolutions.jts.geom.*;
-import com.vividsolutions.jts.geom.Polygon;
 import org.geotools.data.FeatureSource;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
@@ -22,11 +21,11 @@ import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
 import org.upes.Constants;
-import org.upes.utils.CriticalGrid;
 
-import java.awt.*;
 import java.io.IOException;
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Vector;
 
 
 /**
@@ -155,7 +154,7 @@ public class ComputeModel extends SimpleModel
                 CoordinateReferenceSystem beatCRS = layer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
                 CoordinateReferenceSystem lineCRS = roadLayer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
                 MathTransform transform=null;
-                currBeat=new Beat(next.getID());
+                currBeat=new Beat(next.getIdentifier());
                 transform= CRS.findMathTransform(lineCRS,beatCRS,true);
                 currBeat.setArea(areaFunction.getArea(beatGeometry));
                 int id=0;
@@ -212,18 +211,6 @@ public class ComputeModel extends SimpleModel
         return scoreResult;
     }
 
-    public Map<String, Color> getBeatsColor()
-    {
-        Map<String, Color> colorMap = new HashMap<>();
-
-        for (Beat beat : scoreResult)
-        {
-            Color color = CriticalGrid.getColor(beat.getScore());
-            colorMap.put(beat.getId(), color);
-        }
-        return colorMap;
-    }
-
     public void calculateScore()
     {
         Iterator<Layer> iterator = map.layers().iterator();
@@ -254,8 +241,27 @@ public class ComputeModel extends SimpleModel
                 }
             }
         }
-        for (Beat beat : scoreResult) {
-            System.out.println("For ID" + beat.getId() + "  Score --> " + beat.getScore());
+
+        updateTableScore(scoreResult);
+//        for (Beat beat : scoreResult)
+//        {
+//            System.out.println("For ID" + beat.getId().getID() + "  Score --> " + beat.getScore());
+//        }
+    }
+
+    public void updateTableScore(LinkedList<Beat> scoreResult)
+    {
+        FeatureCollection<SimpleFeatureType, SimpleFeature> collection = null;
+        Layer beat = getLayer("BEAT");
+
+        int roadColumn = tableModel.addColumnIfNeeded("Score");
+        int layerStartIndex = tableModel.getLayerStartIndex(beat.getTitle());
+        int layerEndIndex = tableModel.getLayerEndIndex(beat.getTitle());
+        Iterator<Beat>                 iterator = scoreResult.iterator();
+        for (int row = layerStartIndex; row < layerEndIndex; row++)
+        {
+            Beat next = iterator.next();
+            tableModel.setValueAt(next.getScore(), row, roadColumn);
         }
     }
 
@@ -382,7 +388,7 @@ public class ComputeModel extends SimpleModel
                 Geometry beatGeometry = JTS.transform(tempBeatGeometry, mathTransform);
 
                 layerIter = getCollidingFeature(beatGeometry, layer, layerCRS).features();
-                currBeat = new Beat(next.getID());
+                currBeat = new Beat(next.getIdentifier());
                 currBeat.setArea(areaFunction.getArea(beatGeometry));
 
                 double v = 0;
