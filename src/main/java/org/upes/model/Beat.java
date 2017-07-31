@@ -1,5 +1,7 @@
 package org.upes.model;
 
+import org.opengis.filter.identity.FeatureId;
+
 import java.util.HashMap;
 
 /**
@@ -7,22 +9,22 @@ import java.util.HashMap;
  */
 public class Beat {
 
-    private String                  id;
-    private double                  area;
-    private double                  value;
+    private FeatureId id;
+    private double    area;
+    private double    value;
     /**
      * Score per layer
      */
     private HashMap<String, Double> scoreLayer = new HashMap<>();
 
-    public Beat(String id)
+    public Beat(FeatureId id)
     {
         this.id=id;
         area=0;
         value =0;
     }
 
-    public String getId()
+    public FeatureId getId()
     {
         return id;
     }

@@ -24,7 +24,6 @@ public class MapPanel extends JPanel
     public JButton addButton = new JButton();
     public JButton deleteButton = new JButton();
     public JButton calculateButton=new JButton();
-    public JButton shareButton = new JButton();
 
     public JMapPane    mapPane     = new JMapPane();
     public JTable      table       = new JTable();
@@ -68,8 +67,6 @@ public class MapPanel extends JPanel
         rightPart.add(Box.createRigidArea(new Dimension(0,10)));
         calculateButton.setAlignmentX(Box.CENTER_ALIGNMENT);
         rightPart.add(calculateButton);
-        rightPart.add(Box.createRigidArea(new Dimension(0,10)));
-        rightPart.add(shareButton);
         this.add(jSplitPane, BorderLayout.CENTER);
         this.add(rightPart, BorderLayout.EAST);
     }

@@ -40,6 +40,8 @@ public class ComputeModel extends SimpleModel
         POINT
     }
 
+    private LinkedList<Beat> scoreResult = null;
+
     @Override
     public void checkLayer(Layer addedLayer)
     {
@@ -152,7 +154,7 @@ public class ComputeModel extends SimpleModel
                 CoordinateReferenceSystem beatCRS = layer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
                 CoordinateReferenceSystem lineCRS = roadLayer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
                 MathTransform transform=null;
-                currBeat=new Beat(next.getID());
+                currBeat=new Beat(next.getIdentifier());
                 transform= CRS.findMathTransform(lineCRS,beatCRS,true);
                 currBeat.setArea(areaFunction.getArea(beatGeometry));
                 int id=0;
@@ -204,27 +206,30 @@ public class ComputeModel extends SimpleModel
         return beats;
     }
 
-    public void calculateForAll()
+    public LinkedList<Beat> getScoreResult()
+    {
+        return scoreResult;
+    }
+
+    public void calculateScore()
     {
         Iterator<Layer> iterator = map.layers().iterator();
-        LinkedList<Beat> result = null;
         while (iterator.hasNext())
         {
             Layer next = iterator.next();
 
-            System.out.println();
             if(classification.getDefective().contains(next.getFeatureSource().getName().toString()) ||
                     classification.getNeutral().contains(next.getFeatureSource().getName().toString()) ||
                        classification.getSupportive().contains(next.getFeatureSource().getName().toString()))
             {
                 LinkedList<Beat> calculate = calculate(next);
-                if (result == null)
+                if (scoreResult == null)
                 {
-                    result = calculate;
+                    scoreResult = calculate;
                 }
                 else
                 {
-                    Iterator<Beat> iterRes = result.iterator();
+                    Iterator<Beat> iterRes = scoreResult.iterator();
                     Iterator<Beat> iterCalc = calculate.iterator();
 
                     while (iterCalc.hasNext())
@@ -236,8 +241,27 @@ public class ComputeModel extends SimpleModel
                 }
             }
         }
-        for (Beat beat : result) {
-            System.out.println("For ID" + beat.getId() + "  Score --> " + beat.getScore());
+
+        updateTableScore(scoreResult);
+//        for (Beat beat : scoreResult)
+//        {
+//            System.out.println("For ID" + beat.getId().getID() + "  Score --> " + beat.getScore());
+//        }
+    }
+
+    public void updateTableScore(LinkedList<Beat> scoreResult)
+    {
+        FeatureCollection<SimpleFeatureType, SimpleFeature> collection = null;
+        Layer beat = getLayer("BEAT");
+
+        int roadColumn = tableModel.addColumnIfNeeded("Score");
+        int layerStartIndex = tableModel.getLayerStartIndex(beat.getTitle());
+        int layerEndIndex = tableModel.getLayerEndIndex(beat.getTitle());
+        Iterator<Beat>                 iterator = scoreResult.iterator();
+        for (int row = layerStartIndex; row < layerEndIndex; row++)
+        {
+            Beat next = iterator.next();
+            tableModel.setValueAt(next.getScore(), row, roadColumn);
         }
     }
 
@@ -364,7 +388,7 @@ public class ComputeModel extends SimpleModel
                 Geometry beatGeometry = JTS.transform(tempBeatGeometry, mathTransform);
 
                 layerIter = getCollidingFeature(beatGeometry, layer, layerCRS).features();
-                currBeat = new Beat(next.getID());
+                currBeat = new Beat(next.getIdentifier());
                 currBeat.setArea(areaFunction.getArea(beatGeometry));
 
                 double v = 0;
