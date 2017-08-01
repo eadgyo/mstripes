@@ -16,6 +16,7 @@ import org.geotools.referencing.CRS;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.GeometryDescriptor;
+import org.opengis.filter.identity.FeatureId;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
@@ -23,9 +24,7 @@ import org.opengis.referencing.operation.TransformException;
 import org.upes.Constants;
 
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Vector;
+import java.util.*;
 
 
 /**
@@ -33,6 +32,7 @@ import java.util.Vector;
  */
 public class ComputeModel extends SimpleModel
 {
+    public List<Patrol> patrols=new ArrayList<Patrol>();
 
     private enum GeomType {
         POLYGON,
@@ -241,7 +241,6 @@ public class ComputeModel extends SimpleModel
                 }
             }
         }
-
         updateTableScore(scoreResult);
 //        for (Beat beat : scoreResult)
 //        {
@@ -300,6 +299,8 @@ public class ComputeModel extends SimpleModel
                     break;
                 case POINT:
                     score = classification.getScore(layer.getTitle());
+                    if(layer.getTitle().equalsIgnoreCase(Constants.PATROL_CHOWKIS))
+                        addToPatrol(currBeat,lineGeometry);
                     break;
             }
         }
@@ -458,6 +459,13 @@ public class ComputeModel extends SimpleModel
         }
     }
 
-
+    public void addToPatrol(Beat beat,Geometry point)
+    {
+           Patrol patrol=new Patrol();
+           patrol.setGridLocation(beat);
+           patrol.setLongitude(point.getCoordinate().x);
+           patrol.setLatitude(point.getCoordinate().y);
+           patrols.add(patrol);
+    }
 }
 

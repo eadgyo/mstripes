@@ -5,15 +5,32 @@ import org.opengis.filter.identity.FeatureId;
 public class Patrol
 {
     // location
-    private FeatureId gridLocation;
+    private Beat beatLocation;
+    private double latitude,longitude;
 
-    public FeatureId getGridLocation()
+    public Beat getGridLocation()
     {
-        return gridLocation;
+        return beatLocation;
     }
 
-    public void setGridLocation(FeatureId gridLocation)
+    public void setGridLocation(Beat beatLocation)
     {
-        this.gridLocation = gridLocation;
+        this.beatLocation = beatLocation;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
+    }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
     }
 }
