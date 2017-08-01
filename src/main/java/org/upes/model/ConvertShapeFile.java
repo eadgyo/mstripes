@@ -35,21 +35,29 @@ public class ConvertShapeFile{
 
         try {
 
-        FileDataStore store = FileDataStoreFinder.getDataStore(beatFile);
-        FeatureSource featureSource = store.getFeatureSource();
+            FileDataStore store = FileDataStoreFinder.getDataStore(beatFile);
+            FeatureSource featureSource = store.getFeatureSource();
 
-        FileDataStore store2=FileDataStoreFinder.getDataStore(file);
-        FeatureSource featureSource1=store2.getFeatureSource();
+            FileDataStore store2 = FileDataStoreFinder.getDataStore(file);
+            FeatureSource featureSource1 = store2.getFeatureSource();
 
-        SimpleFeatureType map= (SimpleFeatureType) featureSource.getSchema();
-        SimpleFeatureType schema= (SimpleFeatureType) featureSource1.getSchema();
+            SimpleFeatureType map = (SimpleFeatureType) featureSource.getSchema();
+            SimpleFeatureType schema = (SimpleFeatureType) featureSource1.getSchema();
 
-        CoordinateReferenceSystem dataCRS=schema.getCoordinateReferenceSystem();
-        CoordinateReferenceSystem worldCRS = map.getCoordinateReferenceSystem();
-        boolean lenient = true; // allow for some error due to different datums
-        MathTransform transform = CRS.findMathTransform(dataCRS, worldCRS, lenient);
+            CoordinateReferenceSystem dataCRS = schema.getCoordinateReferenceSystem();
+            CoordinateReferenceSystem worldCRS = map.getCoordinateReferenceSystem();
+            boolean lenient = true; // allow for some error due to different datums
+            MathTransform transform = CRS.findMathTransform(dataCRS, worldCRS, lenient);
 
-        SimpleFeatureCollection featureCollection = (SimpleFeatureCollection) featureSource1.getFeatures();
+            SimpleFeatureCollection featureCollection = (SimpleFeatureCollection) featureSource1.getFeatures();
+
+            //Creating a temp folder
+
+            File dir = new File("F:\\intern\\Basemaps\\trial");
+            if (!dir.exists())
+            {
+                dir.mkdir();
+            }
 
         File destination=new File("F:\\intern\\Basemaps\\trial\\"+file.getName());
             DataStoreFactorySpi factory = new ShapefileDataStoreFactory();
