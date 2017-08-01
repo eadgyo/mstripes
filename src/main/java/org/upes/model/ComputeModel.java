@@ -236,7 +236,7 @@ public class ComputeModel extends SimpleModel
                     {
                         Beat beatCalc = iterCalc.next();
                         Beat beatRes = iterRes.next();
-                        beatRes.addScore(next.getTitle(), beatCalc.getScore());
+                        beatRes.addScore(next.getTitle(), beatCalc.getGlobalScore());
                     }
                 }
             }
@@ -245,13 +245,12 @@ public class ComputeModel extends SimpleModel
         updateTableScore(scoreResult);
 //        for (Beat beat : scoreResult)
 //        {
-//            System.out.println("For ID" + beat.getId().getID() + "  Score --> " + beat.getScore());
+//            System.out.println("For ID" + beat.getId().getID() + "  Score --> " + beat.getGlobalScore());
 //        }
     }
 
     public void updateTableScore(LinkedList<Beat> scoreResult)
     {
-        FeatureCollection<SimpleFeatureType, SimpleFeature> collection = null;
         Layer beat = getLayer("BEAT");
 
         int roadColumn = tableModel.addColumnIfNeeded("Score");
@@ -261,7 +260,7 @@ public class ComputeModel extends SimpleModel
         for (int row = layerStartIndex; row < layerEndIndex; row++)
         {
             Beat next = iterator.next();
-            tableModel.setValueAt(next.getScore(), row, roadColumn);
+            tableModel.setValueAt(next.getGlobalScore(), row, roadColumn);
         }
     }
 

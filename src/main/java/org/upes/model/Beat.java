@@ -2,16 +2,22 @@ package org.upes.model;
 
 import org.opengis.filter.identity.FeatureId;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Created by This Pc on 07-07-2017.
  */
 public class Beat {
 
+    private List<Beat> neighbours = new ArrayList<>();
     private FeatureId id;
     private double    area;
     private double    value;
+    private int       rank;
+    private double    globalScore;
+
     /**
      * Score per layer
      */
@@ -22,6 +28,21 @@ public class Beat {
         this.id=id;
         area=0;
         value =0;
+    }
+
+    public List<Beat> getNeighbours()
+    {
+        return neighbours;
+    }
+
+    public int getRank()
+    {
+        return rank;
+    }
+
+    public void setRank(int rank)
+    {
+        this.rank = rank;
     }
 
     public FeatureId getId()
@@ -51,7 +72,15 @@ public class Beat {
             aDouble = 0.0;
 
         aDouble += score;
+        this.globalScore += score;
+
+
         scoreLayer.put(layerName, aDouble);
+    }
+
+    public double getGlobalScore()
+    {
+        return globalScore;
     }
 
     public double getScore()
