@@ -76,7 +76,7 @@ public class StyleUtils
         // roll number
         public int compare(Beat a, Beat b)
         {
-            return (int)(a.getScore() - b.getScore());
+            return (int)(a.getGlobalScore() - b.getGlobalScore());
         }
     }
 
@@ -88,7 +88,7 @@ public class StyleUtils
         int i;
         for (i=1; i < beatList.size(); i++)
         {
-            while (i < beatList.size() && beatList.get(i).getScore() == beatList.get(i - 1).getScore())
+            while (i < beatList.size() && beatList.get(i).getGlobalScore() == beatList.get(i - 1).getGlobalScore())
             {
                 i++;
             }
@@ -121,6 +121,7 @@ public class StyleUtils
         int colorChange = (int) Math.ceil(beatList.size() / rules.size());
 
         int blockIndex = 1;
+        int rank = 0;
         for (int ri=0; ri < rules.size(); ri++)
         {
             Rule rule = rules.get(ri);
@@ -130,8 +131,10 @@ public class StyleUtils
             {
                 for (;blockIndex < blocks.size(); blockIndex++)
                 {
-                    for (int beatIndex=blocks.get(blockIndex-1); beatIndex < blocks.get(blockIndex); beatIndex++)
+                    for (int beatIndex=blocks.get(blockIndex-1); beatIndex < blocks.get(blockIndex); beatIndex++,
+                            rank++)
                     {
+                        beatList.get(beatIndex).setRank(rank);
                         ids.add(beatList.get(beatIndex).getId());
                     }
                 }
@@ -142,8 +145,10 @@ public class StyleUtils
                         (ci == 0 || ci + blocks.get(blockIndex) - blocks.get(blockIndex-1) < colorChange); blockIndex++)
                 {
                     // Add all element with the same score
-                    for (int beatIndex=blocks.get(blockIndex-1); beatIndex < blocks.get(blockIndex); beatIndex++, ci++)
+                    for (int beatIndex=blocks.get(blockIndex-1); beatIndex < blocks.get(blockIndex); beatIndex++,
+                            ci++, rank++)
                     {
+                        beatList.get(beatIndex).setRank(rank);
                         ids.add(beatList.get(beatIndex).getId());
                     }
                 }
