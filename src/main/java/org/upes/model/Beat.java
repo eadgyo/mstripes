@@ -1,5 +1,6 @@
 package org.upes.model;
 
+import com.vividsolutions.jts.geom.Geometry;
 import org.opengis.filter.identity.FeatureId;
 
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ public class Beat {
 
     private List<Beat> neighbours = new ArrayList<>();
     private FeatureId id;
+    private Geometry geometry;
     private double    area;
     private double    value;
     private int       rank;
@@ -102,5 +104,16 @@ public class Beat {
     public void addValue(double v)
     {
         value += v;
+    }
+
+    public void addNeighbour(Beat beat)
+    {this.neighbours.add(beat);}
+
+    public Geometry getGeometry() {
+        return geometry;
+    }
+
+    public void setGeometry(Geometry geometry) {
+        this.geometry = geometry;
     }
 }
