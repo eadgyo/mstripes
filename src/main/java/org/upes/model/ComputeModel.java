@@ -299,13 +299,13 @@ public class ComputeModel extends SimpleModel
                 case POLYGON:
                     double area = intersection.getArea();
                     score = area * classification.getScore(layer.getTitle()) / currBeat.getArea();
-                    v = area;
                     break;
                 case LINE:
                     v = intersection.getLength();
+                    if(currBeat.getValue()==0)
+                        score = classification.getScore(layer.getTitle());
                     break;
                 case POINT:
-                    v = 1;
                     score = classification.getScore(layer.getTitle());
                     break;
             }
