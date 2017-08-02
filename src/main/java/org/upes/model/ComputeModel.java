@@ -23,9 +23,7 @@ import org.opengis.referencing.operation.TransformException;
 import org.upes.Constants;
 
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Vector;
+import java.util.*;
 
 
 /**
@@ -41,6 +39,7 @@ public class ComputeModel extends SimpleModel
     }
 
     private LinkedList<Beat> scoreResult = null;
+    private ArrayList<Beat> sortedBeats = null;
 
     @Override
     public void checkLayer(Layer addedLayer)
@@ -49,6 +48,10 @@ public class ComputeModel extends SimpleModel
         updateRoadLength(addedLayer, null);
     }
 
+    public ArrayList<Beat> getSortedBeats()
+    {
+        return sortedBeats;
+    }
 
     public void checkLayerRoad(Layer testedLayer)
     {
@@ -242,15 +245,19 @@ public class ComputeModel extends SimpleModel
             }
         }
 
-        updateTableScore(scoreResult);
+        updateTableScore();
+        updateRankAndSort();
 //        for (Beat beat : scoreResult)
 //        {
 //            System.out.println("For ID" + beat.getId().getID() + "  Score --> " + beat.getGlobalScore());
 //        }
     }
 
-    public void updateTableScore(LinkedList<Beat> scoreResult)
+    public void updateTableScore()
     {
+        if (scoreResult == null)
+            return;
+
         Layer beat = getLayer("BEAT");
 
         int roadColumn = tableModel.addColumnIfNeeded("Score");
@@ -459,5 +466,77 @@ public class ComputeModel extends SimpleModel
     }
 
 
+
+    private class Sortbyroll implements Comparator<Beat>
+    {
+        // Used for sorting in ascending order of
+        // roll number
+        public int compare(Beat a, Beat b)
+        {
+            return (int)(a.getGlobalScore() - b.getGlobalScore());
+        }
+    }
+
+
+    public ArrayList<Integer> regroupPerBlock(ArrayList<Beat> beatList)
+    {
+        ArrayList<Integer> beatsPerBlock = new ArrayList<>();
+        beatsPerBlock.add(0);
+        int i;
+        for (i=1; i < beatList.size(); i++)
+        {
+            while (i < beatList.size() && beatList.get(i).getGlobalScore() == beatList.get(i - 1).getGlobalScore())
+            {
+                i++;
+            }
+            beatsPerBlock.add(i);
+        }
+
+        // If last not added
+        if (i <= beatList.size() && beatList.size() != 0)
+        {
+            // Add in a new block
+            beatsPerBlock.add(i);
+        }
+
+        return beatsPerBlock;
+    }
+
+    public void updateRankAndSort()
+    {
+        // Sort beats per score
+        sortedBeats = new ArrayList<>();
+        sortedBeats.addAll(scoreResult);
+        sortedBeats.sort(new Sortbyroll());
+
+        // Regroup per block, beat with the same score
+        ArrayList<Integer> blocks = regroupPerBlock(sortedBeats);
+
+        int colorChange = (int) Math.ceil(sortedBeats.size() / Constants.NUMBER_RANKS);
+
+        int blockIndex = 1;
+        for (int rank = 0; rank < Constants.NUMBER_RANKS - 1; rank++)
+        {
+            for (int ci=0; blockIndex < blocks.size() && ci <= colorChange &&
+                    (ci == 0 || ci + blocks.get(blockIndex) - blocks.get(blockIndex-1) < colorChange); blockIndex++)
+            {
+                // Add all element with the same score
+                for (int beatIndex=blocks.get(blockIndex-1); beatIndex < blocks.get(blockIndex); beatIndex++,
+                        ci++)
+                {
+                    sortedBeats.get(beatIndex).setRank(rank);
+                }
+            }
+        }
+
+        // Add the rest of the elements
+        for (;blockIndex < blocks.size(); blockIndex++)
+        {
+            for (int beatIndex=blocks.get(blockIndex-1); beatIndex < blocks.get(blockIndex); beatIndex++)
+            {
+                sortedBeats.get(beatIndex).setRank(Constants.NUMBER_RANKS-1);
+            }
+        }
+    }
 }
 

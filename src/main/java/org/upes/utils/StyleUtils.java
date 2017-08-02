@@ -4,11 +4,15 @@ import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.styling.*;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.filter.identity.FeatureId;
+import org.upes.Constants;
 import org.upes.model.Beat;
 import org.upes.model.RuleEntry;
 
 import java.awt.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class StyleUtils
 {
@@ -70,92 +74,24 @@ public class StyleUtils
         return style;
     }
 
-    private static class Sortbyroll implements Comparator<Beat>
-    {
-        // Used for sorting in ascending order of
-        // roll number
-        public int compare(Beat a, Beat b)
-        {
-            return (int)(a.getGlobalScore() - b.getGlobalScore());
-        }
-    }
 
-
-    public static ArrayList<Integer> regroupPerBlock(ArrayList<Beat> beatList)
-    {
-        ArrayList<Integer> beatsPerBlock = new ArrayList<>();
-        beatsPerBlock.add(0);
-        int i;
-        for (i=1; i < beatList.size(); i++)
-        {
-            while (i < beatList.size() && beatList.get(i).getGlobalScore() == beatList.get(i - 1).getGlobalScore())
-            {
-                i++;
-            }
-            beatsPerBlock.add(i);
-        }
-
-        // If last not added
-        if (i <= beatList.size() && beatList.size() != 0)
-        {
-            // Add in a new block
-            beatsPerBlock.add(i);
-        }
-
-        return beatsPerBlock;
-    }
-
-    public static Style createStyleFromCritical(LinkedList<Beat> rawList, String geometryAttributeName)
+    public static Style createStyleFromCritical(List<Beat> sortedList, String geometryAttributeName)
     {
         ArrayList<Rule> rules = CriticalGrid.createRuleEntries(geometryAttributeName);
         FeatureTypeStyle fts = sf.createFeatureTypeStyle();
 
-        // Sort beats per score
-        ArrayList<Beat> beatList = new ArrayList<>();
-        beatList.addAll(rawList);
-        beatList.sort(new Sortbyroll());
+        int i = 0;
 
-        // Regroup per block, beat with the same score
-        ArrayList<Integer> blocks = regroupPerBlock(beatList);
-
-        int colorChange = (int) Math.ceil(beatList.size() / rules.size());
-
-        int blockIndex = 1;
-        int rank = 0;
-        for (int ri=0; ri < rules.size(); ri++)
+        for (int rank = 0; rank < Constants.NUMBER_RANKS; rank++)
         {
-            Rule rule = rules.get(ri);
-            Set<FeatureId> ids = new HashSet<FeatureId>();
+            Rule           rule = rules.get(rank);
+            Set<FeatureId> ids  = new HashSet<>();
 
-            if (ri == rules.size() - 1)
+            while (i < sortedList.size() && sortedList.get(i).getRank() == rank)
             {
-                for (;blockIndex < blocks.size(); blockIndex++)
-                {
-                    for (int beatIndex=blocks.get(blockIndex-1); beatIndex < blocks.get(blockIndex); beatIndex++,
-                            rank++)
-                    {
-                        beatList.get(beatIndex).setRank(rank);
-                        ids.add(beatList.get(beatIndex).getId());
-                    }
-                }
+                ids.add(sortedList.get(i).getId());
+                i++;
             }
-            else
-            {
-                for (int ci=0; blockIndex < blocks.size() && ci <= colorChange &&
-                        (ci == 0 || ci + blocks.get(blockIndex) - blocks.get(blockIndex-1) < colorChange); blockIndex++)
-                {
-                    // Add all element with the same score
-                    for (int beatIndex=blocks.get(blockIndex-1); beatIndex < blocks.get(blockIndex); beatIndex++,
-                            ci++, rank++)
-                    {
-                        beatList.get(beatIndex).setRank(rank);
-                        ids.add(beatList.get(beatIndex).getId());
-                    }
-                }
-            }
-
-            System.out.println(ri + " = " + ids.size());
-
             rule.setFilter(ff.id(ids));
             fts.rules().add(rule);
         }

@@ -62,4 +62,5 @@ public interface Constants
     int COOPERATIVE=1;
 
     int SERVER_PORT = 8080;
+    int NUMBER_RANKS = 5;
 }

@@ -441,7 +441,8 @@ public class Controller
         if (beatLayer == null)
             return;
         String geometryAttributeName = beatLayer.getFeatureSource().getSchema().getGeometryDescriptor().getLocalName();
-        Style style = StyleUtils.createStyleFromCritical(computeModel.getScoreResult(), geometryAttributeName);
+
+        Style style = StyleUtils.createStyleFromCritical(computeModel.getSortedBeats(), geometryAttributeName);
 
         ((FeatureLayer) beatLayer).setStyle(style);
         repaint();
