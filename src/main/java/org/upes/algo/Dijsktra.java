@@ -24,14 +24,14 @@ public class Dijsktra
         // Create table to convert beat in NodeBeat
         Map<Beat, NodeBeat> tableBeat = new HashMap<>();
 
-        for (Beat beat : tableBeat.keySet())
+        for (Beat beat : beats)
         {
             NodeBeat node = new NodeBeat(beat, 0, 0); //beat.getX(), beat.getY());
             tableBeat.put(beat, node);
         }
 
         // Create neighbours
-        for (Beat beat : tableBeat.keySet())
+        for (Beat beat : beats)
         {
             NodeBeat   nodeBeat   = tableBeat.get(beat);
             List<Beat> neighbours = beat.getNeighbours();
