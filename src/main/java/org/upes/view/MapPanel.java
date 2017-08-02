@@ -29,6 +29,9 @@ public class MapPanel extends JPanel
     public JTable      table       = new JTable();
     public JScrollPane scrollTable = new JScrollPane(table);
 
+    public JTextField latitude=new JTextField();
+    public JTextField longitude =new JTextField();
+
     public Set<JMapFrame.Tool> toolSet;
     public JToolBar            toolBar;
     public JSplitPane jSplitPane;
@@ -67,8 +70,13 @@ public class MapPanel extends JPanel
         rightPart.add(Box.createRigidArea(new Dimension(0,10)));
         calculateButton.setAlignmentX(Box.CENTER_ALIGNMENT);
         rightPart.add(calculateButton);
+        latitude.setPreferredSize(new Dimension(20,getHeight()));
+        rightPart.add(latitude);
+        longitude.setPreferredSize(new Dimension(20,getHeight()));
+        rightPart.add(longitude);
         this.add(jSplitPane, BorderLayout.CENTER);
         this.add(rightPart, BorderLayout.EAST);
+
     }
 
     private void initToolBar()
