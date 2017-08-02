@@ -19,6 +19,7 @@ public class Beat {
     private double    value;
     private int       rank;
     private double    globalScore;
+    private double latitude,logitude;
 
     /**
      * Score per layer
@@ -115,5 +116,21 @@ public class Beat {
 
     public void setGeometry(Geometry geometry) {
         this.geometry = geometry;
+    }
+
+    public double getLogitude() {
+        return logitude;
+    }
+
+    public void setLogitude(double logitude) {
+        this.logitude = logitude;
+    }
+
+    public double getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
     }
 }

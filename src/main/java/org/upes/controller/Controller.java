@@ -7,6 +7,7 @@ import org.geotools.data.FileDataStoreFactorySpi;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
+import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.SchemaException;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.FeatureLayer;
@@ -285,6 +286,7 @@ public class Controller
         SimpleFeatureCollection grabFeaturesInMouseBox(MapMouseEvent ev) throws Exception
         {
             ReferencedEnvelope bbox = ev.getEnvelopeByPixels(2);
+            SimpleFeatureCollection coll;
             return computeModel.grabFeaturesInBoundingBox(bbox, computeModel.getLayer("BEAT"));
         }
 
