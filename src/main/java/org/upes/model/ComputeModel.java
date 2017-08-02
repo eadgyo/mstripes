@@ -400,6 +400,7 @@ public class ComputeModel extends SimpleModel
             while (beatIter.hasNext())
             {
                 SimpleFeature next = beatIter.next();
+                System.out.println(next.getAttribute("BEAT_N"));
                 Geometry tempBeatGeometry = (Geometry) next.getDefaultGeometry();
                 Geometry beatGeometry = JTS.transform(tempBeatGeometry, mathTransform);
 
