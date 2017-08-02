@@ -20,17 +20,24 @@ public class Beat {
     private int       rank;
     private double    globalScore;
     private double latitude,logitude;
+    private String name;
 
     /**
      * Score per layer
      */
     private HashMap<String, Double> scoreLayer = new HashMap<>();
 
-    public Beat(FeatureId id)
+    public Beat(FeatureId id, String name)
     {
+        this.name = name;
         this.id=id;
         area=0;
         value =0;
+    }
+
+    public String getName()
+    {
+        return name;
     }
 
     public List<Beat> getNeighbours()
@@ -118,7 +125,7 @@ public class Beat {
         this.geometry = geometry;
     }
 
-    public double getLogitude() {
+    public double getLongitude() {
         return logitude;
     }
 

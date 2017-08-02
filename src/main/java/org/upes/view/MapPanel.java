@@ -23,14 +23,15 @@ public class MapPanel extends JPanel
     public JButton loadButton = new JButton();
     public JButton addButton = new JButton();
     public JButton deleteButton = new JButton();
-    public JButton calculateButton=new JButton();
+    public JButton calculateButton = new JButton();
+    public JButton pathButton = new JButton();
 
     public JMapPane    mapPane     = new JMapPane();
     public JTable      table       = new JTable();
     public JScrollPane scrollTable = new JScrollPane(table);
 
-    public JTextField latitude=new JTextField();
-    public JTextField longitude =new JTextField();
+    public JTextField latitude = new JTextField();
+    public JTextField longitude = new JTextField();
 
     public Set<JMapFrame.Tool> toolSet;
     public JToolBar            toolBar;
@@ -70,6 +71,9 @@ public class MapPanel extends JPanel
         rightPart.add(Box.createRigidArea(new Dimension(0,10)));
         calculateButton.setAlignmentX(Box.CENTER_ALIGNMENT);
         rightPart.add(calculateButton);
+        rightPart.add(Box.createRigidArea(new Dimension(0,10)));
+        pathButton.setAlignmentX(Box.CENTER_ALIGNMENT);
+        rightPart.add(pathButton);
         JPanel coordinates=new JPanel();
         latitude.setMinimumSize(new Dimension(20,getHeight()));
         latitude.setPreferredSize(new Dimension(20,getHeight()));

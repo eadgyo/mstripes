@@ -21,6 +21,9 @@ public interface Constants
     String NAME_DEL_MAP="Customize";
     String DESC_DEL_MAP="Customize layers from map";
 
+    String NAME_PATH = "Path";
+    String DESC_PATH = "Create path for patrols";
+
     String NAME_CALC_INTERSECT="Calculate";
     String DESC_CALC_INTERSECT="Calculate the area of occupancy of each layer";
     String NAME_OK_DIALOG = "OK";

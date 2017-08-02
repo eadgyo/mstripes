@@ -4,7 +4,7 @@ import org.upes.model.Beat;
 
 import java.util.*;
 
-public class Dijsktra
+public class Dijkstra
 {
     private HashSet<NodeBeat> openList;
     private HashSet<NodeBeat> closedList;
@@ -13,6 +13,57 @@ public class Dijsktra
 
     private NodeBeat start, end;
     private NodeBeat current;
+
+    private double factorScore;
+
+    public Dijkstra(double factorScore)
+    {
+        this.factorScore = factorScore;
+    }
+
+    private interface Fo
+    {
+        public boolean isFinished(NodeBeat current);
+        public boolean isPathFound(NodeBeat current);
+    }
+
+    private class BeatFo implements Fo
+    {
+        @Override
+        public boolean isFinished(NodeBeat current)
+        {
+            return end == current;
+        }
+
+        @Override
+        public boolean isPathFound(NodeBeat current)
+        {
+            return end == current;
+        }
+    }
+
+    private class DistanceFo implements Fo
+    {
+        double distance;
+
+        public DistanceFo(double distance)
+        {
+            this.distance = distance;
+        }
+
+        @Override
+        public boolean isFinished(NodeBeat current)
+        {
+            return current.distance > distance;
+        }
+
+        @Override
+        public boolean isPathFound(NodeBeat current)
+        {
+            return true;
+        }
+    }
+
 
     public void init(Collection<Beat> beats, Beat startB, Beat endB)
     {
@@ -26,7 +77,7 @@ public class Dijsktra
 
         for (Beat beat : beats)
         {
-            NodeBeat node = new NodeBeat(beat, 0, 0); //beat.getX(), beat.getY());
+            NodeBeat node = new NodeBeat(beat, beat.getLongitude(), beat.getLatitude());
             tableBeat.put(beat, node);
         }
 
@@ -44,27 +95,46 @@ public class Dijsktra
 
         // Set start and end
         this.start = tableBeat.get(startB);
-        this.end = tableBeat.get(endB);
+        if (endB == null)
+        {
+            this.end = null;
+        }
+        else
+        {
+            this.end = tableBeat.get(endB);
+        }
     }
 
     public List<Beat> pathFinding(Collection<Beat> beats, Beat startB, Beat endB)
     {
+        BeatFo beatFo = new BeatFo();
+        return pathFinding(beats, startB, endB, beatFo);
+    }
+
+    public List<Beat> pathFinding(Collection<Beat> beats, Beat startB, double distance)
+    {
+        DistanceFo distanceFo = new DistanceFo(distance);
+        return pathFinding(beats, startB, null, distanceFo);
+    }
+
+    private List<Beat> pathFinding(Collection<Beat> beats, Beat startB, Beat endB, Fo condition)
+    {
         init(beats, startB, endB);
 
         start.previous = null;
-        current = null;
+        current = start;
         start.computeDisntance(start);
         addNeighbours(current);
         addClosedList(current);
 
-        while (current != end && openList.size() != 0)
+        while (!condition.isFinished(current) && openList.size() != 0)
         {
             current = bestOpenList();
             addNeighbours(current);
             addClosedList(current);
         }
 
-        if(current == end)
+        if(condition.isPathFound(current))
         {
             while(current.previous != null)
             {
@@ -97,13 +167,13 @@ public class Dijsktra
         while(opLi.hasNext())
         {
             NodeBeat tmp = (NodeBeat) opLi.next();
-            if(best.tScore() > tmp.tScore())
+            if(best.tScore(factorScore) > tmp.tScore(factorScore))
             {
                 best = tmp;
             }
-            else if(best.tScore() == tmp.tScore())
+            else if(best.tScore(factorScore) == tmp.tScore(factorScore))
             {
-                if(best.tScore() > tmp.tScore())
+                if(best.tScore(factorScore) > tmp.tScore(factorScore))
                     best = tmp;
             }
         }
@@ -130,7 +200,7 @@ public class Dijsktra
                     e.printStackTrace();
                 }
                 clone.computeDisntance(current);
-                if(clone.tScore() < nodes.get(i).tScore())
+                if(clone.tScore(factorScore) < nodes.get(i).tScore(factorScore))
                 {
                     nodes.get(i).previous = current;
                     nodes.get(i).next = null;

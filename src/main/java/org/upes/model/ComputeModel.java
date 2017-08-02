@@ -16,7 +16,6 @@ import org.geotools.referencing.CRS;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.GeometryDescriptor;
-import org.opengis.filter.identity.FeatureId;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
@@ -31,7 +30,7 @@ import java.util.*;
  */
 public class ComputeModel extends SimpleModel
 {
-    public List<Patrol> patrols=new ArrayList<Patrol>();
+    public List<Patrol> patrols = new ArrayList<Patrol>();
 
     private enum GeomType {
         POLYGON,
@@ -41,6 +40,11 @@ public class ComputeModel extends SimpleModel
 
     private LinkedList<Beat> scoreResult = null;
     private ArrayList<Beat> sortedBeats = null;
+
+    public Patrol getPatrol(int n)
+    {
+        return patrols.get(n);
+    }
 
     @Override
     public void checkLayer(Layer addedLayer)
@@ -158,7 +162,7 @@ public class ComputeModel extends SimpleModel
                 CoordinateReferenceSystem beatCRS = layer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
                 CoordinateReferenceSystem lineCRS = roadLayer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
                 MathTransform transform=null;
-                currBeat=new Beat(next.getIdentifier());
+                currBeat=new Beat(next.getIdentifier(), (String) next.getAttribute("BEAT_N"));
                 transform= CRS.findMathTransform(lineCRS,beatCRS,true);
                 currBeat.setArea(areaFunction.getArea(beatGeometry));
                 int id=0;
@@ -401,7 +405,7 @@ public class ComputeModel extends SimpleModel
                 Geometry beatGeometry = JTS.transform(tempBeatGeometry, mathTransform);
 
                 layerIter = getCollidingFeature(beatGeometry, layer, layerCRS).features();
-                currBeat = new Beat(next.getIdentifier());
+                currBeat = new Beat(next.getIdentifier(), (String) next.getAttribute("BEAT_N"));
                 currBeat.setArea(areaFunction.getArea(beatGeometry));
                 currBeat.setGeometry(tempBeatGeometry);
                 currBeat.setLogitude(tempBeatGeometry.getCentroid().getCoordinate().x);
