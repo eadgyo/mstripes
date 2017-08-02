@@ -57,6 +57,7 @@ public interface Constants
 
     String ROAD_NAME_FILE = "forst_road_core";
     String PATROL_CHOWKIS = "Patrolling_camp";
+    String WIRELESS_CHOWKI="Wireless_station";
     int SUPPORTIVE=3;
     int DEFECTIVE=2;
     int COOPERATIVE=1;

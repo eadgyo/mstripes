@@ -89,7 +89,6 @@ public class ConvertShapeFile{
             }
 
             transaction.commit();
-
         } catch (FactoryException e) {
             e.printStackTrace();
         }

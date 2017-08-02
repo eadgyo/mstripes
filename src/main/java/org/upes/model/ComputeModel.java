@@ -242,10 +242,12 @@ public class ComputeModel extends SimpleModel
             }
         }
         updateTableScore(scoreResult);
-//        for (Beat beat : scoreResult)
+        findNeighbours("BEAT");
+        //        for (Beat beat : scoreResult)
 //        {
 //            System.out.println("For ID" + beat.getId().getID() + "  Score --> " + beat.getGlobalScore());
 //        }
+
     }
 
     public void updateTableScore(LinkedList<Beat> scoreResult)
@@ -299,7 +301,7 @@ public class ComputeModel extends SimpleModel
                     break;
                 case POINT:
                     score = classification.getScore(layer.getTitle());
-                    if(layer.getTitle().equalsIgnoreCase(Constants.PATROL_CHOWKIS))
+                    if(layer.getTitle().equalsIgnoreCase(Constants.PATROL_CHOWKIS) || layer.getTitle().equalsIgnoreCase(Constants.WIRELESS_CHOWKI))
                         addToPatrol(currBeat,lineGeometry);
                     break;
             }
@@ -390,7 +392,7 @@ public class ComputeModel extends SimpleModel
                 layerIter = getCollidingFeature(beatGeometry, layer, layerCRS).features();
                 currBeat = new Beat(next.getIdentifier());
                 currBeat.setArea(areaFunction.getArea(beatGeometry));
-
+                currBeat.setGeometry(tempBeatGeometry);
                 double v = 0;
                 while (layerIter.hasNext())
                 {
@@ -400,7 +402,6 @@ public class ComputeModel extends SimpleModel
                     registerIntersection(type, currBeat, layer, lineGeometry, beatGeometry);
                 }
                 //TestCompare(v, type, currBeat, layer, beatGeometry);
-
                 layerIter.close();
                 beats.add(currBeat);
             }
@@ -467,5 +468,39 @@ public class ComputeModel extends SimpleModel
            patrol.setLatitude(point.getCoordinate().y);
            patrols.add(patrol);
     }
-}
 
+    public void findNeighbours(String layername)
+    {
+        try {
+                Layer layer=getLayer(layername);
+                Iterator<Beat> beatitr = scoreResult.iterator();
+                while (beatitr.hasNext()) {
+                    Beat currbeat=beatitr.next();
+                    SimpleFeatureIterator innerBeat= (SimpleFeatureIterator) layer.getFeatureSource().getFeatures().features();
+//                    System.out.print(currbeat.getId() + "  :-");
+                    while (innerBeat.hasNext()) {
+                        SimpleFeature beat = innerBeat.next();
+                        Geometry currbeatgeom=currbeat.getGeometry();
+                        Geometry beatgeom = (Geometry) beat.getDefaultGeometry();
+                        int index = -1;
+                        if (currbeatgeom.intersects(beatgeom)) {
+                            for (Beat b : scoreResult) {
+                                if ( (b.getId().toString().equals(beat.getID().toString())) && (!currbeat.getId().toString().equals(b.getId().toString()))) {
+                                    index = scoreResult.indexOf(b);
+                                    break;
+                                }
+                            }
+                            if(index>=0)
+                            currbeat.addNeighbour(scoreResult.get(index));
+//                            System.out.print(beat.getID() + "  ");
+                        }
+                    }
+//                    System.out.println("");
+                }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+}
