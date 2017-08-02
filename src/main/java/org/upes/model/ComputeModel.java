@@ -26,7 +26,6 @@ import org.upes.Constants;
 import java.io.IOException;
 import java.util.*;
 
-
 /**
  * Created by eadgyo on 27/06/17.
  */
@@ -404,6 +403,8 @@ public class ComputeModel extends SimpleModel
                 currBeat = new Beat(next.getIdentifier());
                 currBeat.setArea(areaFunction.getArea(beatGeometry));
                 currBeat.setGeometry(tempBeatGeometry);
+                currBeat.setLogitude(tempBeatGeometry.getCentroid().getCoordinate().x);
+                currBeat.setLatitude(tempBeatGeometry.getCentroid().getCoordinate().y);
                 double v = 0;
                 while (layerIter.hasNext())
                 {
@@ -480,39 +481,38 @@ public class ComputeModel extends SimpleModel
            patrols.add(patrol);
     }
 
-    public void findNeighbours(String layername)
-    {
+    public void findNeighbours(String layername) {
         try {
-                Layer layer=getLayer(layername);
-                Iterator<Beat> beatitr = scoreResult.iterator();
-                while (beatitr.hasNext()) {
-                    Beat currbeat=beatitr.next();
-                    SimpleFeatureIterator innerBeat= (SimpleFeatureIterator) layer.getFeatureSource().getFeatures().features();
+            Layer layer = getLayer(layername);
+            Iterator<Beat> beatitr = scoreResult.iterator();
+            while (beatitr.hasNext()) {
+                Beat currbeat = beatitr.next();
+                SimpleFeatureIterator innerBeat = (SimpleFeatureIterator) layer.getFeatureSource().getFeatures().features();
 //                    System.out.print(currbeat.getId() + "  :-");
-                    while (innerBeat.hasNext()) {
-                        SimpleFeature beat = innerBeat.next();
-                        Geometry currbeatgeom=currbeat.getGeometry();
-                        Geometry beatgeom = (Geometry) beat.getDefaultGeometry();
-                        int index = -1;
-                        if (currbeatgeom.intersects(beatgeom)) {
-                            for (Beat b : scoreResult) {
-                                if ( (b.getId().toString().equals(beat.getID().toString())) && (!currbeat.getId().toString().equals(b.getId().toString()))) {
-                                    index = scoreResult.indexOf(b);
-                                    break;
-                                }
+                while (innerBeat.hasNext()) {
+                    SimpleFeature beat = innerBeat.next();
+                    Geometry currbeatgeom = currbeat.getGeometry();
+                    Geometry beatgeom = (Geometry) beat.getDefaultGeometry();
+                    int index = -1;
+                    if (currbeatgeom.intersects(beatgeom)) {
+                        for (Beat b : scoreResult) {
+                            if ((b.getId().toString().equals(beat.getID().toString())) && (!currbeat.getId().toString().equals(b.getId().toString()))) {
+                                index = scoreResult.indexOf(b);
+                                break;
                             }
-                            if(index>=0)
+                        }
+                        if (index >= 0)
                             currbeat.addNeighbour(scoreResult.get(index));
 //                            System.out.print(beat.getID() + "  ");
-                        }
                     }
-//                    System.out.println("");
                 }
+//                    System.out.println("");
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
         }
-
+    }
 
     private class Sortbyroll implements Comparator<Beat>
     {
@@ -586,4 +586,3 @@ public class ComputeModel extends SimpleModel
         }
     }
     }
-}
