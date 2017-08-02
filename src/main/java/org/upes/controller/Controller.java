@@ -428,12 +428,22 @@ public class Controller
         Style style;
 
         RuleEntry defaultEntry = new RuleEntry(Color.BLACK, Color.LIGHT_GRAY, 1.0);
-        RuleEntry selectedEntry = new RuleEntry(Color.BLACK, Color.RED, 1.2);
+        RuleEntry selectedEntry = new RuleEntry(Color.BLACK, Color.BLACK, 1.4);
 
-        if (IDs.isEmpty())
-            style = StyleUtils.createDefaultStyle(defaultEntry, geometryAttributeName);
+        if (computeModel.getSortedBeats() == null)
+        {
+            if (IDs.isEmpty())
+                style = StyleUtils.createDefaultStyle(defaultEntry, geometryAttributeName);
+            else
+                style = StyleUtils.createSelectedStyle(defaultEntry, selectedEntry, IDs, geometryAttributeName);
+
+        }
         else
-            style = StyleUtils.createSelectedStyle(defaultEntry, selectedEntry, IDs, geometryAttributeName);
+        {
+            style = StyleUtils.createStyleFromCritical(computeModel.getSortedBeats(), IDs,
+                                                       selectedEntry, geometryAttributeName);
+
+        }
 
         ((FeatureLayer) layer).setStyle(style);
         repaint();

@@ -45,6 +45,8 @@ public class SimpleModel
     protected MapContent          map;
     protected MyTableModel        tableModel;
 
+    protected boolean invalidData = false;
+
     protected String initPath = PersonalConstants.INIT_PATH;
 
 
@@ -142,6 +144,7 @@ public class SimpleModel
 
         // Add the first layer to map
         Layer addedLayer = loadMap();
+        invalidData = true;
 
         // Compute road length if available
         if (addedLayer != null)
@@ -162,7 +165,7 @@ public class SimpleModel
 
     public Layer loadMap() {
 
-        Style style =myStyleFactory.setStyle(featureSource.getSchema());
+        Style style = myStyleFactory.setStyle(featureSource.getSchema());
 
         SimpleFeatureIterator features = null;
         try {

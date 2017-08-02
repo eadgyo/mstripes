@@ -74,8 +74,27 @@ public class StyleUtils
         return style;
     }
 
+    public static Style createStyleFromCritical(List<Beat> sortedList, Set<FeatureId> IDs, RuleEntry selectedEntry,
+                                                String geometryAttributeName)
+    {
+        FeatureTypeStyle featureTypeFromCritical = createFeatureTypeFromCritical(sortedList, geometryAttributeName);
 
-    public static Style createStyleFromCritical(List<Beat> sortedList, String geometryAttributeName)
+        Rule selectedRule = createRule(selectedEntry, geometryAttributeName);
+        selectedRule.setFilter(ff.id(IDs));
+        FeatureTypeStyle fts = sf.createFeatureTypeStyle();
+        fts.rules().add(selectedRule);
+
+
+        Style style = sf.createStyle();
+
+        style.featureTypeStyles().add(featureTypeFromCritical);
+        style.featureTypeStyles().add(fts);
+
+        return style;
+    }
+
+    public static FeatureTypeStyle createFeatureTypeFromCritical(List<Beat> sortedList,
+                                                                 String geometryAttributeName)
     {
         ArrayList<Rule> rules = CriticalGrid.createRuleEntries(geometryAttributeName);
         FeatureTypeStyle fts = sf.createFeatureTypeStyle();
@@ -95,9 +114,15 @@ public class StyleUtils
             rule.setFilter(ff.id(ids));
             fts.rules().add(rule);
         }
-        
+
+        return fts;
+    }
+
+    public static Style createStyleFromCritical(List<Beat> sortedList, String geometryAttributeName)
+    {
+        FeatureTypeStyle featureTypeFromCritical = createFeatureTypeFromCritical(sortedList, geometryAttributeName);
         Style style = sf.createStyle();
-        style.featureTypeStyles().add(fts);
+        style.featureTypeStyles().add(featureTypeFromCritical);
         return style;
     }
 }
