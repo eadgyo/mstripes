@@ -4,7 +4,7 @@ import org.upes.model.Beat;
 
 import java.util.*;
 
-public class Dijsktra
+public class Dijkstra
 {
     private HashSet<NodeBeat> openList;
     private HashSet<NodeBeat> closedList;

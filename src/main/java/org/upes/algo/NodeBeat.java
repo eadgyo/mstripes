@@ -38,7 +38,7 @@ public class NodeBeat implements Cloneable
 
     public void computeDisntance(NodeBeat previous)
     {
-        distance = Dijsktra.euclidianDistance(this, previous) + previous.distance;
+        distance = Dijkstra.euclidianDistance(this, previous) + previous.distance;
         sumBeatScore = beat.getScore() + previous.sumBeatScore;
     }
 
