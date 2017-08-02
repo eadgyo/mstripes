@@ -13,9 +13,7 @@ import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
-import sun.plugin.javascript.navig4.Layer;
 
-import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;

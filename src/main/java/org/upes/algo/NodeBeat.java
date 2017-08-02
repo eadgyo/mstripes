@@ -52,9 +52,9 @@ public class NodeBeat implements Cloneable
         return sumBeatScore;
     }
 
-    public double tScore()
+    public double tScore(double factorScore)
     {
-        return distance + sumBeatScore;
+        return distance + factorScore*sumBeatScore;
     }
 
     public void addNeighbour(NodeBeat neighbour)

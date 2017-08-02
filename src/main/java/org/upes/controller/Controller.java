@@ -1,13 +1,13 @@
 package org.upes.controller;
 
 import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.Point;
 import org.geotools.data.DataStore;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.FileDataStoreFactorySpi;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
-import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.SchemaException;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.FeatureLayer;
@@ -20,10 +20,8 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.identity.FeatureId;
 import org.upes.Constants;
-import org.upes.model.Classification;
-import org.upes.model.ComputeModel;
-import org.upes.model.MyTableModel;
-import org.upes.model.RuleEntry;
+import org.upes.algo.Dijkstra;
+import org.upes.model.*;
 import org.upes.utils.MapServer;
 import org.upes.utils.StyleUtils;
 import org.upes.utils.ZipMem;
@@ -58,7 +56,8 @@ public class Controller
     private DeleteAction  deleteAction  = new DeleteAction();
     private OkClassificationAction okClassification =new OkClassificationAction();
     private MyTableListener tableListener = new MyTableListener();
-    private CalcAction calcAction=new CalcAction();
+    private CalcAction calcAction = new CalcAction();
+    private PathAction pathAction = new PathAction();
 
     protected MapServer mapServer;
 
@@ -75,6 +74,7 @@ public class Controller
         mapPanel.deleteButton.setAction(deleteAction);
         view.optionsDialog.ok.setAction(okClassification);
         mapPanel.calculateButton.setAction(calcAction);
+        mapPanel.pathButton.setAction(pathAction);
 
         addAction.setEnabled(false);
         deleteAction.setEnabled(false);
@@ -333,6 +333,8 @@ public class Controller
                    while (features.hasNext()) {
                        SimpleFeature fa = features.next();
                        Geometry geometry = (Geometry) fa.getDefaultGeometry();
+                       Point         centroid = geometry.getCentroid();
+                       System.out.println(centroid);
                        if (fa.getName().toString().equals("BEAT"))
                        {
                            int col_index = view.mapPanel.table.getColumn("BEAT_N").getModelIndex();
@@ -489,6 +491,43 @@ public class Controller
     public MapContent getMap()
     {
         return mapPanel.mapPane.getMapContent();
+    }
+
+    private class PathAction extends AbstractAction
+    {
+
+        public PathAction()
+        {
+            super(Constants.NAME_PATH);
+            this.putValue(SHORT_DESCRIPTION, Constants.DESC_PATH);
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent actionEvent)
+        {
+//            String latitudeText = mapPanel.latitude.getText();
+//            String longitudeText = mapPanel.longitude.getText();
+            Patrol firstPatrol = computeModel.getPatrol(0);
+            Beat   startLoc = firstPatrol.getGridLocation();
+
+            Dijkstra dijkstra = new Dijkstra(1000);
+
+            String value = JOptionPane.showInputDialog("Please input mark for test 1: ");
+            double dist     = Double.parseDouble(value);
+            List<Beat> beats  = dijkstra.pathFinding(computeModel.getSortedBeats(), startLoc, dist);
+
+
+            HashSet<FeatureId> selectedFeatures = new HashSet<>();
+            for (Beat beat : beats)
+            {
+                System.out.println(beat.getName());
+                selectedFeatures.add(beat.getId());
+            }
+
+            Layer beatLayer = computeModel.getLayer("BEAT");
+            String geometryAttributeName = beatLayer.getFeatureSource().getSchema().getGeometryDescriptor().getLocalName();
+            displaySelectedFeatures(beatLayer, selectedFeatures, geometryAttributeName);
+        }
     }
 
 }
