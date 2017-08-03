@@ -428,7 +428,7 @@ public class Controller
         Style style;
 
         RuleEntry defaultEntry = new RuleEntry(Color.BLACK, Color.LIGHT_GRAY, 1.0);
-        RuleEntry selectedEntry = new RuleEntry(Color.BLACK, Color.BLACK, 1.4);
+        RuleEntry selectedEntry = new RuleEntry(Color.WHITE, Color.BLACK, 1.4);
 
         if (computeModel.getSortedBeats() == null)
         {

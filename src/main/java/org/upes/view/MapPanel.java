@@ -74,15 +74,13 @@ public class MapPanel extends JPanel
         rightPart.add(Box.createRigidArea(new Dimension(0,10)));
         pathButton.setAlignmentX(Box.CENTER_ALIGNMENT);
         rightPart.add(pathButton);
-        JPanel coordinates=new JPanel();
-        latitude.setMinimumSize(new Dimension(20,getHeight()));
-        latitude.setPreferredSize(new Dimension(20,getHeight()));
-        coordinates.add(latitude);
-        longitude.setMinimumSize(new Dimension(20,getHeight()));
-        longitude.setPreferredSize(new Dimension(20,getHeight()));
-        coordinates.add(longitude);
-
-        rightPart.add(coordinates);
+        rightPart.add(Box.createRigidArea(new Dimension(0,10)));
+        latitude.setSize(50,20);
+        rightPart.add(latitude);
+        rightPart.add(Box.createRigidArea(new Dimension(0,10)));
+        longitude.setSize(50,20);
+        rightPart.add(longitude);
+        rightPart.add(Box.createRigidArea(new Dimension(0,1200)));
         this.add(jSplitPane, BorderLayout.CENTER);
         this.add(rightPart, BorderLayout.EAST);
 
