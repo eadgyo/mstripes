@@ -61,6 +61,11 @@ public interface Constants
     String ROAD_NAME_FILE = "forst_road_core";
     String PATROL_CHOWKIS = "Patrolling_camp";
     String WIRELESS_CHOWKI="Wireless_station";
+    String BEAT_NAME = "BEAT";
+    String BEAT_FEATURE_NAME = "BEAT_N";
+    String ATTRIBUTE_STATUS = "STATUS";
+    double FACTOR_SCORE = 1000;
+
     int SUPPORTIVE=3;
     int DEFECTIVE=2;
     int COOPERATIVE=1;

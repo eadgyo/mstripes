@@ -129,7 +129,7 @@ public class Beat {
         return logitude;
     }
 
-    public void setLogitude(double logitude) {
+    public void setLongitude(double logitude) {
         this.logitude = logitude;
     }
 
