@@ -49,6 +49,7 @@ public class ComputeModel extends SimpleModel
     @Override
     public void checkLayer(Layer addedLayer)
     {
+        initScoreData(addedLayer);
         checkLayerRoad(addedLayer);
         updateRoadLength(addedLayer, null);
     }
@@ -86,7 +87,7 @@ public class ComputeModel extends SimpleModel
                 {
                     SimpleFeature feature = features.next();
                     Vector        vector  = new Vector<>();
-                    if (feature.getAttribute("STATUS") != null)
+                    if (feature.getAttribute(Constants.ATTRIBUTE_STATUS) != null)
                         return true;
                 }
             }
@@ -106,8 +107,12 @@ public class ComputeModel extends SimpleModel
         if (layerRoad == null || addedLayer == layerRoad || !isRoadLengthNecessary(addedLayer))
             return;
 
-        LinkedList<Beat> beats = calculate_road_length(layerRoad, addedLayer);
+        calculate_road_length(layerRoad, addedLayer);
+        updateRoadTable(addedLayer, scoreResult);
+    }
 
+    public void updateRoadTable(Layer addedLayer, LinkedList<Beat> beats)
+    {
         Iterator<Beat> beatIterator = beats.iterator();
 
         FeatureCollection<SimpleFeatureType, SimpleFeature> collection = null;
@@ -123,7 +128,7 @@ public class ComputeModel extends SimpleModel
             {
                 SimpleFeature next = features.next();
                 Beat temp=beatIterator.next();
-                Object        statusValue = next.getAttribute("STATUS");
+                Object        statusValue = next.getAttribute(Constants.ATTRIBUTE_STATUS);
                 double status;
                 if (statusValue instanceof Integer)
                 {
@@ -139,22 +144,21 @@ public class ComputeModel extends SimpleModel
         {
             e.printStackTrace();
         }
-
     }
 
-    public LinkedList<Beat> calculate_road_length(Layer roadLayer, Layer layer)
+    public void calculate_road_length(Layer roadLayer, Layer layer)
     {
-        LinkedList<Beat> beats=new LinkedList<Beat>();
         SimpleFeatureIterator linefeatures=null;
         SimpleFeatureIterator simpleFeatureIterator=null;
-        Layer newLayer=null;
         AreaFunction areaFunction=new AreaFunction();
         Beat currBeat;
         try {
             simpleFeatureIterator= (SimpleFeatureIterator) layer.getFeatureSource().getFeatures().features();
-            int count=0;
+            Iterator<Beat> beatScoreIter = scoreResult.iterator();
             while (simpleFeatureIterator.hasNext())
             {
+                currBeat = beatScoreIter.next();
+
                 SimpleFeature next=simpleFeatureIterator.next();
                 Geometry beatGeometry= (Geometry) next.getDefaultGeometry();
                 linefeatures = (SimpleFeatureIterator) roadLayer.getFeatureSource().getFeatures().features();
@@ -162,10 +166,8 @@ public class ComputeModel extends SimpleModel
                 CoordinateReferenceSystem beatCRS = layer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
                 CoordinateReferenceSystem lineCRS = roadLayer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
                 MathTransform transform=null;
-                currBeat=new Beat(next.getIdentifier(), (String) next.getAttribute("BEAT_N"));
-                transform= CRS.findMathTransform(lineCRS,beatCRS,true);
+                transform = CRS.findMathTransform(lineCRS, beatCRS,true);
                 currBeat.setArea(areaFunction.getArea(beatGeometry));
-                int id=0;
                 double lineLength=0;
                 while (linefeatures.hasNext())
                 {
@@ -180,7 +182,6 @@ public class ComputeModel extends SimpleModel
                         Geometry intersection = lineGeometry.intersection(beatGeometry);
  //                       featureBuilder.add(intersection);
   //                      SimpleFeature feature = featureBuilder.buildFeature(next.getID()+"line"+id);
-                        id++;
                         lineLength+=intersection.getLength();
   //                      fcollect.add(feature);
                     }
@@ -197,7 +198,6 @@ public class ComputeModel extends SimpleModel
 //
 //                }
                 linefeatures.close();
-                beats.add(currBeat);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -211,7 +211,6 @@ public class ComputeModel extends SimpleModel
             linefeatures.close();
         }
 
-        return beats;
     }
 
     public LinkedList<Beat> getScoreResult()
@@ -230,26 +229,10 @@ public class ComputeModel extends SimpleModel
                     classification.getNeutral().contains(next.getFeatureSource().getName().toString()) ||
                        classification.getSupportive().contains(next.getFeatureSource().getName().toString()))
             {
-                LinkedList<Beat> calculate = calculate(next);
-                if (scoreResult == null)
-                {
-                    scoreResult = calculate;
-                }
-                else
-                {
-                    Iterator<Beat> iterRes = scoreResult.iterator();
-                    Iterator<Beat> iterCalc = calculate.iterator();
-
-                    while (iterCalc.hasNext())
-                    {
-                        Beat beatCalc = iterCalc.next();
-                        Beat beatRes = iterRes.next();
-                        beatRes.addScore(next.getTitle(), beatCalc.getGlobalScore());
-                    }
-                }
+                calculate(next);
             }
         }
-        findNeighbours("BEAT");
+        findNeighbours(Constants.BEAT_NAME);
         //        for (Beat beat : scoreResult)
 
         updateTableScore();
@@ -266,7 +249,7 @@ public class ComputeModel extends SimpleModel
         if (scoreResult == null)
             return;
 
-        Layer beat = getLayer("BEAT");
+        Layer beat = getLayer(Constants.BEAT_NAME);
 
         int roadColumn = tableModel.addColumnIfNeeded("Score");
         int layerStartIndex = tableModel.getLayerStartIndex(beat.getTitle());
@@ -375,52 +358,88 @@ public class ComputeModel extends SimpleModel
         return numberOfFeatures;
     }
 
-    public LinkedList<Beat> calculate(Layer layer)
+    public void initScoreData(Layer addedLayer)
+    {
+        if (!addedLayer.getTitle().equals(Constants.BEAT_NAME) || sortedBeats != null)
+            return;
+
+        scoreResult = new LinkedList<>();
+        sortedBeats = new ArrayList<>();
+
+        SimpleFeatureIterator beatIter=null;
+        AreaFunction areaFunction = new AreaFunction();
+
+        try {
+            beatIter = (SimpleFeatureIterator) addedLayer.getFeatureSource().getFeatures().features();
+            while (beatIter.hasNext())
+            {
+                SimpleFeature next = beatIter.next();
+                Geometry tempBeatGeometry = (Geometry) next.getDefaultGeometry();
+
+                Beat currBeat = new Beat(next.getIdentifier(), (String) next.getAttribute(Constants.BEAT_FEATURE_NAME));
+                currBeat.setArea(areaFunction.getArea(tempBeatGeometry));
+                currBeat.setGeometry(tempBeatGeometry);
+                currBeat.setLongitude(tempBeatGeometry.getCentroid().getCoordinate().x);
+                currBeat.setLatitude(tempBeatGeometry.getCentroid().getCoordinate().y);
+
+                scoreResult.add(currBeat);
+                sortedBeats.add(currBeat);
+            }
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+        finally
+        {
+            beatIter.close();
+        }
+
+    }
+
+    public void calculate(Layer layer)
     {
         GeomType type = getGeometryType(layer);
 
-        Layer beatLayer = getLayer("BEAT");
-        LinkedList<Beat> beats=new LinkedList<Beat>();
+        Layer beatLayer = getLayer(Constants.BEAT_NAME);
 
         if (beatLayer == null || beatLayer == layer)
-            return beats;
+            return;
 
         SimpleFeatureIterator layerIter=null;
         SimpleFeatureIterator beatIter=null;
         AreaFunction areaFunction = new AreaFunction();
         Beat currBeat;
 
-        MathTransform mathTransform = getTransformGeometry(beatLayer, layer);
+        MathTransform mathTransform = getTransformGeometry(layer, beatLayer);
 
         CoordinateReferenceSystem layerCRS = layer.getFeatureSource().getSchema()
                                                     .getCoordinateReferenceSystem();
 
         try {
-            beatIter= (SimpleFeatureIterator) beatLayer.getFeatureSource().getFeatures().features();
+            Iterator<Beat> beatScoreIter = scoreResult.iterator();
+            beatIter = (SimpleFeatureIterator) beatLayer.getFeatureSource().getFeatures().features();
             while (beatIter.hasNext())
             {
-                SimpleFeature next = beatIter.next();
-                System.out.println(next.getAttribute("BEAT_N"));
-                Geometry tempBeatGeometry = (Geometry) next.getDefaultGeometry();
-                Geometry beatGeometry = JTS.transform(tempBeatGeometry, mathTransform);
+                currBeat = beatScoreIter.next();
 
-                layerIter = getCollidingFeature(beatGeometry, layer, layerCRS).features();
-                currBeat = new Beat(next.getIdentifier(), (String) next.getAttribute("BEAT_N"));
-                currBeat.setArea(areaFunction.getArea(beatGeometry));
-                currBeat.setGeometry(tempBeatGeometry);
-                currBeat.setLogitude(tempBeatGeometry.getCentroid().getCoordinate().x);
-                currBeat.setLatitude(tempBeatGeometry.getCentroid().getCoordinate().y);
-                double v = 0;
+                SimpleFeature next = beatIter.next();
+                System.out.println(next.getAttribute(Constants.BEAT_FEATURE_NAME));
+                Geometry beatGeometry = (Geometry) next.getDefaultGeometry();
+
+                MathTransform inverse = mathTransform.inverse();
+                Geometry tempBeatGeometry = JTS.transform(beatGeometry, inverse);
+                layerIter = getCollidingFeature(tempBeatGeometry, layer, layerCRS).features();
+
                 while (layerIter.hasNext())
                 {
                     SimpleFeature lineFeature=layerIter.next();
                     Geometry lineGeometry = (Geometry) lineFeature.getDefaultGeometry();
-
+                    lineGeometry = JTS.transform(lineGeometry, mathTransform);
                     registerIntersection(type, currBeat, layer, lineGeometry, beatGeometry);
                 }
                 //TestCompare(v, type, currBeat, layer, beatGeometry);
                 layerIter.close();
-                beats.add(currBeat);
             }
         } catch (IOException | TransformException e) {
             e.printStackTrace();
@@ -429,8 +448,6 @@ public class ComputeModel extends SimpleModel
         {
             beatIter.close();
         }
-
-        return beats;
     }
 
     private GeomType getGeometryType(Layer layer)

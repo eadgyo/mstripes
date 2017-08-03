@@ -287,7 +287,7 @@ public class Controller
         {
             ReferencedEnvelope bbox = ev.getEnvelopeByPixels(2);
             SimpleFeatureCollection coll;
-            return computeModel.grabFeaturesInBoundingBox(bbox, computeModel.getLayer("BEAT"));
+            return computeModel.grabFeaturesInBoundingBox(bbox, computeModel.getLayer(Constants.BEAT_NAME));
         }
 
         @Override
@@ -335,21 +335,21 @@ public class Controller
                        Geometry geometry = (Geometry) fa.getDefaultGeometry();
                        Point         centroid = geometry.getCentroid();
                        System.out.println(centroid);
-                       if (fa.getName().toString().equals("BEAT"))
+                       if (fa.getName().toString().equals(Constants.BEAT_NAME))
                        {
-                           int col_index = view.mapPanel.table.getColumn("BEAT_N").getModelIndex();
+                           int col_index = view.mapPanel.table.getColumn(Constants.BEAT_FEATURE_NAME).getModelIndex();
                            MyTableModel tableModel = (MyTableModel) computeModel.getTableModel();
                            int index = -1;
 
-                           int startIndex = tableModel.getLayerStartIndex("BEAT");
-                           int endIndex       = tableModel.getLayerEndIndex("BEAT");
+                           int startIndex = tableModel.getLayerStartIndex(Constants.BEAT_NAME);
+                           int endIndex       = tableModel.getLayerEndIndex(Constants.BEAT_NAME);
 
                            for (int row = startIndex; row < endIndex; row++)
                            {
                                if (tableModel.getValueAt(row, col_index) != null)
                                {
                                    String temp = tableModel.getValueAt(row, col_index).toString();
-                                   if (temp.equalsIgnoreCase(fa.getAttribute("BEAT_N").toString()))
+                                   if (temp.equalsIgnoreCase(fa.getAttribute(Constants.BEAT_FEATURE_NAME).toString()))
                                    {
                                        index = row;
                                        break;
@@ -394,15 +394,15 @@ public class Controller
 
     public void updateSelectedLayers()
     {
-        Layer        beatLayer    = computeModel.getLayer("BEAT");
+        Layer        beatLayer    = computeModel.getLayer(Constants.BEAT_NAME);
         if (beatLayer == null)
             return;
 
         MyTableModel tableModel   = (MyTableModel) computeModel.getTableModel();
         int[]        selectedRows = mapPanel.table.getSelectedRows();
-        int          column       = tableModel.getColumn("BEAT_N");
-        int          startBeat    = tableModel.getLayerStartIndex("BEAT");
-        int          endBeat      = tableModel.getLayerEndIndex("BEAT");
+        int          column       = tableModel.getColumn(Constants.BEAT_FEATURE_NAME);
+        int          startBeat    = tableModel.getLayerStartIndex(Constants.BEAT_NAME);
+        int          endBeat      = tableModel.getLayerEndIndex(Constants.BEAT_NAME);
 
         for (int selectedRow : selectedRows)
         {
@@ -413,7 +413,7 @@ public class Controller
             if (selectedRow >= startBeat && selectedRow < endBeat)
             {
                 // Get layer feature
-                SimpleFeature featureFast = (SimpleFeature) computeModel.findFeature(beatLayer, "BEAT_N", (String) valueAt);
+                SimpleFeature featureFast = (SimpleFeature) computeModel.findFeature(beatLayer, Constants.BEAT_FEATURE_NAME, (String) valueAt);
 
                 // Change color of this feature
                 selectedFeatures.add(featureFast.getIdentifier());
@@ -451,7 +451,7 @@ public class Controller
 
     public void displayCriticalColor()
     {
-        Layer        beatLayer    = computeModel.getLayer("BEAT");
+        Layer        beatLayer    = computeModel.getLayer(Constants.BEAT_NAME);
         if (beatLayer == null)
             return;
         String geometryAttributeName = beatLayer.getFeatureSource().getSchema().getGeometryDescriptor().getLocalName();
@@ -520,7 +520,7 @@ public class Controller
             Patrol firstPatrol = computeModel.getPatrol(0);
             Beat   startLoc = firstPatrol.getGridLocation();
 
-            Dijkstra dijkstra = new Dijkstra(1000);
+            Dijkstra dijkstra = new Dijkstra(Constants.FACTOR_SCORE);
 
             String value = JOptionPane.showInputDialog("Please input mark for test 1: ");
             double dist     = Double.parseDouble(value);
@@ -534,7 +534,7 @@ public class Controller
                 selectedFeatures.add(beat.getId());
             }
 
-            Layer beatLayer = computeModel.getLayer("BEAT");
+            Layer beatLayer = computeModel.getLayer(Constants.BEAT_NAME);
             String geometryAttributeName = beatLayer.getFeatureSource().getSchema().getGeometryDescriptor().getLocalName();
             displaySelectedFeatures(beatLayer, selectedFeatures, geometryAttributeName);
         }
