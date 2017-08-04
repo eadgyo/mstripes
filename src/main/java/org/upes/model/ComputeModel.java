@@ -500,6 +500,7 @@ public class ComputeModel extends SimpleModel
            patrol.setGridLocation(beat);
            patrol.setLongitude(point.getCoordinate().x);
            patrol.setLatitude(point.getCoordinate().y);
+            System.out.println(point.getCoordinate().x+"  "+point.getCoordinate().y);
            patrols.add(patrol);
     }
 

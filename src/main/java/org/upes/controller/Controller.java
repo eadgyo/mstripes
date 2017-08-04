@@ -280,13 +280,45 @@ public class Controller
         }
     }
 
+    SimpleFeatureCollection grabFeaturesInMouseBox(double x, double y) throws Exception
+    {
+        ReferencedEnvelope bbox = new ReferencedEnvelope();
+        bbox.init(x-1, x+1, y-1, y+1);
+        return computeModel.grabFeaturesInBoundingBox(bbox, computeModel.getLayer(Constants.BEAT_NAME));
+    }
+
+    public Beat  selectBeat(double x, double y)
+    {
+        try {
+            SimpleFeatureCollection collection = grabFeaturesInMouseBox(x,y);
+            SimpleFeatureIterator iterator = collection.features();
+            Beat finalBeat;
+            while (iterator.hasNext())
+            {
+                SimpleFeature feature=iterator.next();
+                List<Beat> beatList = computeModel.getScoreResult();
+
+                for (Beat beat : beatList)
+                {
+                    if (feature.getID().equals(beat.getId().toString()))
+                    {
+                        finalBeat=beat;
+                       return finalBeat;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     private class MouseMapListener implements MapMouseListener
     {
 
         SimpleFeatureCollection grabFeaturesInMouseBox(MapMouseEvent ev) throws Exception
         {
             ReferencedEnvelope bbox = ev.getEnvelopeByPixels(2);
-            SimpleFeatureCollection coll;
             return computeModel.grabFeaturesInBoundingBox(bbox, computeModel.getLayer(Constants.BEAT_NAME));
         }
 
@@ -515,10 +547,18 @@ public class Controller
         @Override
         public void actionPerformed(ActionEvent actionEvent)
         {
-//            String latitudeText = mapPanel.latitude.getText();
-//            String longitudeText = mapPanel.longitude.getText();
+            String latitudeText = mapPanel.latitude.getText();
+            String longitudeText = mapPanel.longitude.getText();
             Patrol firstPatrol = computeModel.getPatrol(0);
-            Beat   startLoc = firstPatrol.getGridLocation();
+            Beat startLoc = null;
+
+            if (!latitudeText.isEmpty() && !longitudeText.isEmpty())
+               startLoc = selectBeat(Double.valueOf(latitudeText),Double.valueOf(longitudeText));
+
+            if (startLoc==null)
+            {startLoc = firstPatrol.getGridLocation();
+                System.out.println("No Feature Returned");
+            }
 
             Dijkstra dijkstra = new Dijkstra(Constants.FACTOR_SCORE);
 
