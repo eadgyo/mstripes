@@ -233,15 +233,11 @@ public class ComputeModel extends SimpleModel
             }
         }
         findNeighbours(Constants.BEAT_NAME);
-        //        for (Beat beat : scoreResult)
 
         updateTableScore();
         updateRankAndSort();
-//        for (Beat beat : scoreResult)
-//        {
-//            System.out.println("For ID" + beat.getId().getID() + "  Score --> " + beat.getGlobalScore());
-//        }
 
+        invalidData = false;
     }
 
     public void updateTableScore()
@@ -424,7 +420,6 @@ public class ComputeModel extends SimpleModel
                 currBeat = beatScoreIter.next();
 
                 SimpleFeature next = beatIter.next();
-                System.out.println(next.getAttribute(Constants.BEAT_FEATURE_NAME));
                 Geometry beatGeometry = (Geometry) next.getDefaultGeometry();
 
                 MathTransform inverse = mathTransform.inverse();
@@ -500,7 +495,7 @@ public class ComputeModel extends SimpleModel
            patrol.setGridLocation(beat);
            patrol.setLongitude(point.getCoordinate().x);
            patrol.setLatitude(point.getCoordinate().y);
-            System.out.println(point.getCoordinate().x+"  "+point.getCoordinate().y);
+            //System.out.println(point.getCoordinate().x+"  "+point.getCoordinate().y);
            patrols.add(patrol);
     }
 

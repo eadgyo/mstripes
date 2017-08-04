@@ -72,4 +72,14 @@ public interface Constants
 
     int SERVER_PORT = 8080;
     int NUMBER_RANKS = 5;
+
+
+    String DESCRIPTION_ASK_DIALOG = "Enter coordinates value, or click on map.";
+    String ASK_DIALOG_TITLE = "Path Creation";
+
+    String DISTANCE_LABEL = "Distance";
+    String DEFAULT_VALUE_DISTANCE_PATH = "9000";
+
+    String LONGITUDE_LABEL = "Longitude";
+    String LATITUDE_LABEL = "Latitude";
 }

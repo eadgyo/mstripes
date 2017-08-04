@@ -58,6 +58,7 @@ public class Controller
     private MyTableListener tableListener = new MyTableListener();
     private CalcAction calcAction = new CalcAction();
     private PathAction pathAction = new PathAction();
+    private OkPathAction okPathAction = new OkPathAction();
 
     protected MapServer mapServer;
 
@@ -75,6 +76,8 @@ public class Controller
         view.optionsDialog.ok.setAction(okClassification);
         mapPanel.calculateButton.setAction(calcAction);
         mapPanel.pathButton.setAction(pathAction);
+
+        view.askPathView.okButton.setAction(okPathAction);
 
         addAction.setEnabled(false);
         deleteAction.setEnabled(false);
@@ -110,6 +113,9 @@ public class Controller
         {
             e.printStackTrace();
         }
+
+        mapPanel.calculateButton.setEnabled(false);
+        mapPanel.pathButton.setEnabled(false);
     }
 
     private class AddAction extends AbstractAction {
@@ -198,6 +204,8 @@ public class Controller
                     mapPanel.toolBar.getComponentAtIndex(i).setEnabled(true);
             }
 
+            mapPanel.calculateButton.setEnabled(true);
+            mapPanel.pathButton.setEnabled(true);
             mapPanel.mapPane.repaint();
         }
     }
@@ -223,6 +231,50 @@ public class Controller
                 deleteAction.setEnabled(false);
             }
            view.layerDialog.setVisible(false);
+        }
+    }
+
+    private class OkPathAction extends AbstractAction
+    {
+        public OkPathAction() {
+            super(Constants.NAME_OK_DIALOG);
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent actionEvent)
+        {
+            view.askPathView.setVisible(false);
+
+            String latitudeText = view.askPathView.latitude.getText();
+            String longitudeText = view.askPathView.longitude.getText();
+            Patrol firstPatrol = computeModel.getPatrol(0);
+            Beat startLoc = null;
+
+            if (!latitudeText.isEmpty() && !longitudeText.isEmpty())
+                startLoc = selectBeat(Double.valueOf(latitudeText),Double.valueOf(longitudeText));
+
+            if (startLoc==null)
+            {
+                startLoc = firstPatrol.getGridLocation();
+                System.out.println("No Feature Returned");
+            }
+
+            Dijkstra dijkstra = new Dijkstra(Constants.FACTOR_SCORE);
+
+            double dist     = Double.parseDouble(view.askPathView.distance.getText());
+
+            List<Beat> beats  = dijkstra.pathFinding(computeModel.getSortedBeats(), startLoc, dist);
+
+
+            HashSet<FeatureId> selectedFeatures = new HashSet<>();
+            for (Beat beat : beats)
+            {
+                selectedFeatures.add(beat.getId());
+            }
+
+            Layer beatLayer = computeModel.getLayer(Constants.BEAT_NAME);
+            String geometryAttributeName = beatLayer.getFeatureSource().getSchema().getGeometryDescriptor().getLocalName();
+            displaySelectedFeatures(beatLayer, selectedFeatures, geometryAttributeName);
         }
     }
 
@@ -366,7 +418,10 @@ public class Controller
                        SimpleFeature fa = features.next();
                        Geometry geometry = (Geometry) fa.getDefaultGeometry();
                        Point         centroid = geometry.getCentroid();
-                       System.out.println(centroid);
+
+                       view.askPathView.latitude.setText(String.valueOf(centroid.getX()));
+                       view.askPathView.longitude.setText(String.valueOf(centroid.getY()));
+
                        if (fa.getName().toString().equals(Constants.BEAT_NAME))
                        {
                            int col_index = view.mapPanel.table.getColumn(Constants.BEAT_FEATURE_NAME).getModelIndex();
@@ -547,36 +602,14 @@ public class Controller
         @Override
         public void actionPerformed(ActionEvent actionEvent)
         {
-            String latitudeText = mapPanel.latitude.getText();
-            String longitudeText = mapPanel.longitude.getText();
-            Patrol firstPatrol = computeModel.getPatrol(0);
-            Beat startLoc = null;
-
-            if (!latitudeText.isEmpty() && !longitudeText.isEmpty())
-               startLoc = selectBeat(Double.valueOf(latitudeText),Double.valueOf(longitudeText));
-
-            if (startLoc==null)
-            {startLoc = firstPatrol.getGridLocation();
-                System.out.println("No Feature Returned");
-            }
-
-            Dijkstra dijkstra = new Dijkstra(Constants.FACTOR_SCORE);
-
-            String value = JOptionPane.showInputDialog("Please input mark for test 1: ");
-            double dist     = Double.parseDouble(value);
-            List<Beat> beats  = dijkstra.pathFinding(computeModel.getSortedBeats(), startLoc, dist);
-
-
-            HashSet<FeatureId> selectedFeatures = new HashSet<>();
-            for (Beat beat : beats)
+            if (computeModel.isInvalidData())
             {
-                System.out.println(beat.getName());
-                selectedFeatures.add(beat.getId());
+                computeModel.calculateScore();
+                displayCriticalColor();
             }
 
-            Layer beatLayer = computeModel.getLayer(Constants.BEAT_NAME);
-            String geometryAttributeName = beatLayer.getFeatureSource().getSchema().getGeometryDescriptor().getLocalName();
-            displaySelectedFeatures(beatLayer, selectedFeatures, geometryAttributeName);
+            view.askPathView.setVisible(true);
+
         }
     }
 

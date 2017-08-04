@@ -297,6 +297,11 @@ public class SimpleModel
         return (SimpleFeatureCollection) featureSource.getFeatures(filter);
     }
 
+    public boolean isInvalidData()
+    {
+        return invalidData;
+    }
+
     public Collection<String> getSourceLayers()
     {
         return layerToSourcePath.values();

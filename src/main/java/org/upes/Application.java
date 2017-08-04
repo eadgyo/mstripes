@@ -25,6 +25,7 @@ public class Application
         computeModel = new ComputeModel();
         controller = new Controller(view, computeModel);
         view.optionsDialog.pack();
+        view.askPathView.pack();
         launchApp();
 
     }

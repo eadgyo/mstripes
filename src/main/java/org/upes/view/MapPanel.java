@@ -30,9 +30,6 @@ public class MapPanel extends JPanel
     public JTable      table       = new JTable();
     public JScrollPane scrollTable = new JScrollPane(table);
 
-    public JTextField latitude = new JTextField();
-    public JTextField longitude = new JTextField();
-
     public Set<JMapFrame.Tool> toolSet;
     public JToolBar            toolBar;
     public JSplitPane jSplitPane;
@@ -75,15 +72,8 @@ public class MapPanel extends JPanel
         pathButton.setAlignmentX(Box.CENTER_ALIGNMENT);
         rightPart.add(pathButton);
         rightPart.add(Box.createRigidArea(new Dimension(0,10)));
-        latitude.setSize(50,20);
-        rightPart.add(latitude);
-        rightPart.add(Box.createRigidArea(new Dimension(0,10)));
-        longitude.setSize(50,20);
-        rightPart.add(longitude);
-        rightPart.add(Box.createRigidArea(new Dimension(0,1200)));
         this.add(jSplitPane, BorderLayout.CENTER);
         this.add(rightPart, BorderLayout.EAST);
-
     }
 
     private void initToolBar()
