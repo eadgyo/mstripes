@@ -1,14 +1,19 @@
 package org.upes.controller;
 
+import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.Point;
 import org.geotools.data.DataStore;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.FileDataStoreFactorySpi;
+import org.geotools.data.Query;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
+import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.feature.SchemaException;
+import org.geotools.filter.text.cql2.CQL;
+import org.geotools.filter.text.cql2.CQLException;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.FeatureLayer;
 import org.geotools.map.Layer;
@@ -18,6 +23,8 @@ import org.geotools.swing.event.MapMouseEvent;
 import org.geotools.swing.event.MapMouseListener;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.filter.Filter;
+import org.opengis.filter.FilterFactory2;
 import org.opengis.filter.identity.FeatureId;
 import org.upes.Constants;
 import org.upes.algo.Dijkstra;
@@ -371,7 +378,7 @@ public class Controller
         SimpleFeatureCollection grabFeaturesInMouseBox(MapMouseEvent ev) throws Exception
         {
             ReferencedEnvelope bbox = ev.getEnvelopeByPixels(2);
-            return computeModel.grabFeaturesInBoundingBox(bbox, computeModel.getLayer(Constants.BEAT_NAME));
+            return computeModel.grabFeaturesInBoundingBox(bbox, computeModel.getLayer(Constants.GRID_NAME));
         }
 
         @Override
@@ -515,22 +522,38 @@ public class Controller
         Style style;
 
         RuleEntry defaultEntry = new RuleEntry(Color.BLACK, Color.LIGHT_GRAY, 1.0);
-        RuleEntry selectedEntry = new RuleEntry(Color.WHITE, Color.BLACK, 1.4);
+        RuleEntry selectedEntry = new RuleEntry(Color.BLACK, Color.LIGHT_GRAY, 1.4);
 
         if (computeModel.getSortedBeats() == null)
         {
             if (IDs.isEmpty())
                 style = StyleUtils.createDefaultStyle(defaultEntry, geometryAttributeName);
             else
+            {
                 style = StyleUtils.createSelectedStyle(defaultEntry, selectedEntry, IDs, geometryAttributeName);
+            }
 
         }
         else
         {
             style = StyleUtils.createStyleFromCritical(computeModel.getSortedBeats(), IDs,
                                                        selectedEntry, geometryAttributeName);
-
         }
+
+            try {
+                FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
+                SimpleFeatureCollection col = (SimpleFeatureCollection) layer.getFeatureSource().getFeatures(ff.id(IDs));
+                org.opengis.geometry.Envelope region = col.getBounds();
+                computeModel.setRegion(region);
+                mapPanel.mapPane.setDisplayArea(region);
+                Layer grid=computeModel.getLayer(Constants.GRID_NAME);
+
+                System.out.println("HERE");
+                computeModel.initScoreData(grid);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
         ((FeatureLayer) layer).setStyle(style);
         repaint();
@@ -538,7 +561,7 @@ public class Controller
 
     public void displayCriticalColor()
     {
-        Layer        beatLayer    = computeModel.getLayer(Constants.BEAT_NAME);
+        Layer        beatLayer    = computeModel.getLayer(Constants.GRID_NAME);
         if (beatLayer == null)
             return;
         String geometryAttributeName = beatLayer.getFeatureSource().getSchema().getGeometryDescriptor().getLocalName();

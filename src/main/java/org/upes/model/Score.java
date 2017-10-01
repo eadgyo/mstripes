@@ -19,10 +19,7 @@ public class Score {
         Scores.put(Constants.StrDEFECTIVE,-5);
     }
 
-    public int getNeutralScore()
-    {
-        return Scores.get(Constants.StrNEUTRAL);
-    }
+    public int getNeutralScore() { return Scores.get(Constants.StrNEUTRAL); }
     public int getSupportiveScore()
     {
         return Scores.get(Constants.StrSUPPORTIVE);

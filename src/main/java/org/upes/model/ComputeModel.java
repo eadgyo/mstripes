@@ -28,6 +28,7 @@ import java.util.*;
 /**
  * Created by eadgyo on 27/06/17.
  */
+
 public class ComputeModel extends SimpleModel
 {
     public List<Patrol> patrols = new ArrayList<Patrol>();
@@ -40,6 +41,17 @@ public class ComputeModel extends SimpleModel
 
     private LinkedList<Beat> scoreResult = null;
     private ArrayList<Beat> sortedBeats = null;
+    private org.opengis.geometry.Envelope region=null;
+
+    public void setRegion(org.opengis.geometry.Envelope eve)
+    {
+        region=eve;
+    }
+
+    public org.opengis.geometry.Envelope getRegion()
+    {
+        return region;
+    }
 
     public Patrol getPatrol(int n)
     {
@@ -49,9 +61,9 @@ public class ComputeModel extends SimpleModel
     @Override
     public void checkLayer(Layer addedLayer)
     {
-        initScoreData(addedLayer);
-        checkLayerRoad(addedLayer);
-        updateRoadLength(addedLayer, null);
+    //      initScoreData(addedLayer);
+   //     checkLayerRoad(addedLayer);
+   //     updateRoadLength(addedLayer, null);
     }
 
     public ArrayList<Beat> getSortedBeats()
@@ -232,7 +244,7 @@ public class ComputeModel extends SimpleModel
                 calculate(next);
             }
         }
-        findNeighbours(Constants.BEAT_NAME);
+        findNeighbours(Constants.GRID_NAME);
 
         updateTableScore();
         updateRankAndSort();
@@ -289,7 +301,7 @@ public class ComputeModel extends SimpleModel
                     break;
                 case LINE:
                     v = intersection.getLength();
-                    if(currBeat.getValue()==0)
+                    if(currBeat.getValue()!=0)
                         score = classification.getScore(layer.getTitle());
                     break;
                 case POINT:
@@ -356,7 +368,10 @@ public class ComputeModel extends SimpleModel
 
     public void initScoreData(Layer addedLayer)
     {
-        if (!addedLayer.getTitle().equals(Constants.BEAT_NAME) || sortedBeats != null)
+        if(addedLayer==null)
+           return;
+
+        if (!addedLayer.getTitle().equals(Constants.GRID_NAME))
             return;
 
         scoreResult = new LinkedList<>();
@@ -366,13 +381,18 @@ public class ComputeModel extends SimpleModel
         AreaFunction areaFunction = new AreaFunction();
 
         try {
-            beatIter = (SimpleFeatureIterator) addedLayer.getFeatureSource().getFeatures().features();
+
+           CoordinateReferenceSystem gridCRS=addedLayer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
+
+            ReferencedEnvelope ref=((ReferencedEnvelope) getRegion()).transform(gridCRS,true);
+            SimpleFeatureCollection beatcol= grabFeaturesInBoundingBox(ref,addedLayer);
+            beatIter = beatcol.features();
             while (beatIter.hasNext())
             {
                 SimpleFeature next = beatIter.next();
                 Geometry tempBeatGeometry = (Geometry) next.getDefaultGeometry();
 
-                Beat currBeat = new Beat(next.getIdentifier(), (String) next.getAttribute(Constants.BEAT_FEATURE_NAME));
+                Beat currBeat = new Beat(next.getIdentifier());
                 currBeat.setArea(areaFunction.getArea(tempBeatGeometry));
                 currBeat.setGeometry(tempBeatGeometry);
                 currBeat.setLongitude(tempBeatGeometry.getCentroid().getCoordinate().x);
@@ -385,10 +405,12 @@ public class ComputeModel extends SimpleModel
         catch (IOException e)
         {
             e.printStackTrace();
-        }
-        finally
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally
         {
             beatIter.close();
+            System.out.println(scoreResult.size());
         }
 
     }
@@ -397,7 +419,8 @@ public class ComputeModel extends SimpleModel
     {
         GeomType type = getGeometryType(layer);
 
-        Layer beatLayer = getLayer(Constants.BEAT_NAME);
+        Layer beatLayer = getLayer(Constants.GRID_NAME);
+
 
         if (beatLayer == null || beatLayer == layer)
             return;
@@ -414,7 +437,9 @@ public class ComputeModel extends SimpleModel
 
         try {
             Iterator<Beat> beatScoreIter = scoreResult.iterator();
-            beatIter = (SimpleFeatureIterator) beatLayer.getFeatureSource().getFeatures().features();
+            CoordinateReferenceSystem gridCRS=beatLayer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
+            ReferencedEnvelope ref=((ReferencedEnvelope) getRegion()).transform(gridCRS,true);
+            beatIter = grabFeaturesInBoundingBox(ref, getLayer(Constants.GRID_NAME)).features();
             while (beatIter.hasNext())
             {
                 currBeat = beatScoreIter.next();
@@ -438,8 +463,9 @@ public class ComputeModel extends SimpleModel
             }
         } catch (IOException | TransformException e) {
             e.printStackTrace();
-        }
-        finally
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally
         {
             beatIter.close();
         }

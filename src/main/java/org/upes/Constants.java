@@ -82,4 +82,6 @@ public interface Constants
 
     String LONGITUDE_LABEL = "Longitude";
     String LATITUDE_LABEL = "Latitude";
+
+    String GRID_NAME="grd1ha";
 }

@@ -35,6 +35,13 @@ public class Beat {
         value =0;
     }
 
+    public Beat(FeatureId id)
+    {
+        this.id=id;
+        area=0;
+        value =0;
+    }
+
     public String getName()
     {
         return name;

@@ -117,7 +117,7 @@ public class SimpleModel
         while (iterator.hasNext())
         {
             Layer next = iterator.next();
-            if (next.getTitle().equals(Constants.BEAT_NAME))
+            if (next.getTitle().equals(layerName))
                 return next;
         }
 
