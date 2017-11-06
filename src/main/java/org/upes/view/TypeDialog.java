@@ -1,6 +1,8 @@
 package org.upes.view;
 
-public class TypeDialog {
+import javax.swing.*;
+
+public class TypeDialog extends JDialog{
 
     
 }
