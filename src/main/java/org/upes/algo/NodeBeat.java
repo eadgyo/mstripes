@@ -5,6 +5,8 @@ import org.upes.model.Beat;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.lang.Math.log;
+
 public class NodeBeat implements Cloneable
 {
     public Beat beat;
@@ -38,7 +40,7 @@ public class NodeBeat implements Cloneable
 
     public void computeDisntance(NodeBeat previous)
     {
-        distance = Dijkstra.euclidianDistance(this, previous) + previous.distance;
+        distance = Dijkstra.euclidianDistance(this, previous) + previous.distance ;
         sumBeatScore = beat.getScore() + previous.sumBeatScore;
     }
 
@@ -52,9 +54,9 @@ public class NodeBeat implements Cloneable
         return sumBeatScore;
     }
 
-    public double tScore(double factorScore)
+    public double tScore(double factorScore, NodeBeat end, double Distance)
     {
-        return distance + factorScore*sumBeatScore;
+        return distance + factorScore*sumBeatScore + Dijkstra.euclidianDistance(this, end)+factorScore*log(Distance-distance);
     }
 
     public void addNeighbour(NodeBeat neighbour)

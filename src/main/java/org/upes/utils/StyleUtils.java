@@ -26,7 +26,7 @@ public class StyleUtils
         org.geotools.styling.Stroke stroke     = sf.createStroke(ff.literal(outlineColor), ff.literal(lineWidth));
 
         // Polygon type
-        fill = sf.createFill(ff.literal(fillColor), ff.literal(1.0));
+        fill = sf.createFill(ff.literal(fillColor), ff.literal(0.5));
         symbolizer = sf.createPolygonSymbolizer(stroke, fill, geometryAttributeName);
 
         Rule rule = sf.createRule();

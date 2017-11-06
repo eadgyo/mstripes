@@ -74,14 +74,17 @@ public interface Constants
     int NUMBER_RANKS = 5;
 
 
-    String DESCRIPTION_ASK_DIALOG = "Enter coordinates value, or click on map.";
+    String DESCRIPTION_ASK_DIALOG = "Enter coordinates value, or left click on map for starting grid and right click for ending grid.";
     String ASK_DIALOG_TITLE = "Path Creation";
 
     String DISTANCE_LABEL = "Distance";
     String DEFAULT_VALUE_DISTANCE_PATH = "9000";
 
-    String LONGITUDE_LABEL = "Longitude";
-    String LATITUDE_LABEL = "Latitude";
+    String START_LONGITUDE_LABEL = "Start Point Longitude";
+    String START_LATITUDE_LABEL = "Start Point Latitude";
+
+    String END_LONGITUDE_LABEL = "End Point Longitude";
+    String END_LATITUDE_LABEL = "End Point Latitude";
 
     String GRID_NAME="grd1ha";
 }

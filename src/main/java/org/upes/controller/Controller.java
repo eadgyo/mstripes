@@ -1,19 +1,15 @@
 package org.upes.controller;
 
-import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.Point;
 import org.geotools.data.DataStore;
 import org.geotools.data.DataUtilities;
 import org.geotools.data.FileDataStoreFactorySpi;
-import org.geotools.data.Query;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.factory.CommonFactoryFinder;
 import org.geotools.feature.SchemaException;
-import org.geotools.filter.text.cql2.CQL;
-import org.geotools.filter.text.cql2.CQLException;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.FeatureLayer;
 import org.geotools.map.Layer;
@@ -23,7 +19,6 @@ import org.geotools.swing.event.MapMouseEvent;
 import org.geotools.swing.event.MapMouseListener;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
-import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.filter.identity.FeatureId;
 import org.upes.Constants;
@@ -42,6 +37,7 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -252,17 +248,25 @@ public class Controller
         {
             view.askPathView.setVisible(false);
 
-            String latitudeText = view.askPathView.latitude.getText();
-            String longitudeText = view.askPathView.longitude.getText();
-            Patrol firstPatrol = computeModel.getPatrol(0);
+            String startLatitudeText = view.askPathView.latitudeStart.getText();
+            String startLongitudeText = view.askPathView.longitudeStart.getText();
+  //          Patrol firstPatrol = computeModel.getPatrol(0);
             Beat startLoc = null;
 
-            if (!latitudeText.isEmpty() && !longitudeText.isEmpty())
-                startLoc = selectBeat(Double.valueOf(latitudeText),Double.valueOf(longitudeText));
+            String endLatitudeText = view.askPathView.latitudeEnd.getText();
+            String endLongitudeText = view.askPathView.longitudeEnd.getText();
+            Beat endLoc=null;
+
+            if (!startLatitudeText.isEmpty() && !startLongitudeText.isEmpty())
+                startLoc = selectBeat(Double.valueOf(startLatitudeText),Double.valueOf(startLongitudeText));
+
+            if (!endLatitudeText.isEmpty() && !endLongitudeText.isEmpty())
+                endLoc = selectBeat(Double.valueOf(endLatitudeText),Double.valueOf(endLongitudeText));
+
 
             if (startLoc==null)
             {
-                startLoc = firstPatrol.getGridLocation();
+ //               startLoc = firstPatrol.getGridLocation();
                 System.out.println("No Feature Returned");
             }
 
@@ -270,7 +274,7 @@ public class Controller
 
             double dist     = Double.parseDouble(view.askPathView.distance.getText());
 
-            List<Beat> beats  = dijkstra.pathFinding(computeModel.getSortedBeats(), startLoc, dist);
+            List<Beat> beats  = dijkstra.pathFinding(computeModel.getSortedBeats(), startLoc, endLoc, dist);
 
 
             HashSet<FeatureId> selectedFeatures = new HashSet<>();
@@ -279,7 +283,7 @@ public class Controller
                 selectedFeatures.add(beat.getId());
             }
 
-            Layer beatLayer = computeModel.getLayer(Constants.BEAT_NAME);
+            Layer beatLayer = computeModel.getLayer(Constants.GRID_NAME);
             String geometryAttributeName = beatLayer.getFeatureSource().getSchema().getGeometryDescriptor().getLocalName();
             displaySelectedFeatures(beatLayer, selectedFeatures, geometryAttributeName);
         }
@@ -341,9 +345,9 @@ public class Controller
 
     SimpleFeatureCollection grabFeaturesInMouseBox(double x, double y) throws Exception
     {
-        ReferencedEnvelope bbox = new ReferencedEnvelope();
+        ReferencedEnvelope bbox = new ReferencedEnvelope(computeModel.getLayer(Constants.GRID_NAME).getFeatureSource().getSchema().getCoordinateReferenceSystem());
         bbox.init(x-1, x+1, y-1, y+1);
-        return computeModel.grabFeaturesInBoundingBox(bbox, computeModel.getLayer(Constants.BEAT_NAME));
+        return computeModel.grabFeaturesInBoundingBox(bbox, computeModel.getLayer(Constants.GRID_NAME));
     }
 
     public Beat  selectBeat(double x, double y)
@@ -413,23 +417,50 @@ public class Controller
         @Override
         public void onMousePressed(MapMouseEvent ev)
         {
+
           if(ev.getSource().getCursorTool()==null)
            {
                try {
+
                    SimpleFeatureCollection simpleFeatureCollection = grabFeaturesInMouseBox(ev);
                    if (simpleFeatureCollection==null)
                        return;
+
                    SimpleFeatureIterator features = simpleFeatureCollection.features();
+
+                   System.out.println(simpleFeatureCollection.size());
+
+                   Set<FeatureId> Ids=new HashSet<>();
 
                    while (features.hasNext()) {
                        SimpleFeature fa = features.next();
                        Geometry geometry = (Geometry) fa.getDefaultGeometry();
                        Point         centroid = geometry.getCentroid();
 
-                       view.askPathView.latitude.setText(String.valueOf(centroid.getX()));
-                       view.askPathView.longitude.setText(String.valueOf(centroid.getY()));
+                       if(ev.getModifiers()== InputEvent.BUTTON1_MASK)
+                       {
+                           view.askPathView.latitudeStart.setText(String.valueOf(centroid.getX()));
+                           view.askPathView.longitudeStart.setText(String.valueOf(centroid.getY()));
+                           computeModel.setStartGrid(fa.getIdentifier());
+                       }
+                       else if (ev.getModifiers()== InputEvent.BUTTON3_MASK)
+                       {
+                           view.askPathView.latitudeEnd.setText(String.valueOf(centroid.getX()));
+                           view.askPathView.longitudeEnd.setText(String.valueOf(centroid.getY()));
+                           computeModel.setEndGrid(fa.getIdentifier());
+                       }
 
-                       if (fa.getName().toString().equals(Constants.BEAT_NAME))
+                       if (computeModel.getStartGrid()!=null)
+                       {
+                           Ids.add(computeModel.getStartGrid());
+                       }
+                       if (computeModel.getEndGrid()!=null)
+                       {
+                           Ids.add(computeModel.getEndGrid());
+                       }
+
+/*
+                       if (fa.getName().toString().equals(Constants.GRID_NAME))
                        {
                            int col_index = view.mapPanel.table.getColumn(Constants.BEAT_FEATURE_NAME).getModelIndex();
                            MyTableModel tableModel = (MyTableModel) computeModel.getTableModel();
@@ -450,10 +481,11 @@ public class Controller
                                    }
                                }
                            }
-                           if (index >= 0)
+                        //   if (index >= 0)
                                view.mapPanel.table.changeSelection(index, col_index, false, false);
-                       }
+                       }*/
                    }
+                   displaySelectedFeatures(computeModel.getLayer(Constants.GRID_NAME),Ids,computeModel.getLayer(Constants.GRID_NAME).getFeatureSource().getSchema().getGeometryDescriptor().getLocalName());
                } catch (Exception e) {
                    e.printStackTrace();
                }
@@ -521,15 +553,25 @@ public class Controller
     {
         Style style;
 
-        RuleEntry defaultEntry = new RuleEntry(Color.BLACK, Color.LIGHT_GRAY, 1.0);
-        RuleEntry selectedEntry = new RuleEntry(Color.BLACK, Color.LIGHT_GRAY, 1.4);
+        RuleEntry defaultEntry ;
+        RuleEntry selectedEntry ;
 
+        if (layer.getTitle().equals(Constants.BEAT_NAME))
+        {
+            defaultEntry = new RuleEntry(Color.BLACK, Color.LIGHT_GRAY, 1.0);
+            selectedEntry = new RuleEntry(Color.BLUE, Color.LIGHT_GRAY, 2.0);
+        }
+        else
+        {
+            defaultEntry = new RuleEntry(Color.BLACK, Color.LIGHT_GRAY, 1.0);
+            selectedEntry = new RuleEntry(Color.WHITE, Color.BLACK, 1.2);
+        }
         if (computeModel.getSortedBeats() == null)
         {
             if (IDs.isEmpty())
                 style = StyleUtils.createDefaultStyle(defaultEntry, geometryAttributeName);
             else
-            {
+                {
                 style = StyleUtils.createSelectedStyle(defaultEntry, selectedEntry, IDs, geometryAttributeName);
             }
 
@@ -540,20 +582,21 @@ public class Controller
                                                        selectedEntry, geometryAttributeName);
         }
 
+        if (layer.getTitle().equals(Constants.BEAT_NAME) && computeModel.isInvalidData()) {
             try {
                 FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
                 SimpleFeatureCollection col = (SimpleFeatureCollection) layer.getFeatureSource().getFeatures(ff.id(IDs));
                 org.opengis.geometry.Envelope region = col.getBounds();
                 computeModel.setRegion(region);
                 mapPanel.mapPane.setDisplayArea(region);
-                Layer grid=computeModel.getLayer(Constants.GRID_NAME);
+                Layer grid = computeModel.getLayer(Constants.GRID_NAME);
 
-                System.out.println("HERE");
                 computeModel.initScoreData(grid);
 
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
 
         ((FeatureLayer) layer).setStyle(style);
         repaint();

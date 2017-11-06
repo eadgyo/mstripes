@@ -7,14 +7,18 @@ import java.awt.*;
 
 public class AskPathView extends JDialog
 {
-    public JTextField latitude = new JTextField();
-    public JLabel latitudeLabel = new JLabel(Constants.LATITUDE_LABEL, JLabel.TRAILING);
-    public JTextField longitude = new JTextField();
-    public JLabel longitudeLabel = new JLabel(Constants.LONGITUDE_LABEL, JLabel.TRAILING);
+    public JTextField latitudeStart = new JTextField();
+    public JLabel latitudeLabelStart = new JLabel(Constants.START_LATITUDE_LABEL, JLabel.TRAILING);
+    public JTextField longitudeStart = new JTextField();
+    public JLabel longitudeLabelStart = new JLabel(Constants.START_LONGITUDE_LABEL, JLabel.TRAILING);
     public JTextField distance = new JTextField(Constants.DEFAULT_VALUE_DISTANCE_PATH);
     public JLabel  distanceLabel = new JLabel(Constants.DISTANCE_LABEL, JLabel.TRAILING);
     public JLabel description = new JLabel(Constants.DESCRIPTION_ASK_DIALOG, JLabel.TRAILING);
     public JButton okButton = new JButton();
+    public JTextField latitudeEnd = new JTextField();
+    public JLabel latitudeLabelEnd = new JLabel(Constants.END_LATITUDE_LABEL,JLabel.TRAILING);
+    public JTextField longitudeEnd = new JTextField();
+    public JLabel longitudeLabelEnd = new JLabel(Constants.END_LATITUDE_LABEL, JLabel.TRAILING);
 
     public AskPathView(Frame frame)
     {
@@ -35,8 +39,8 @@ public class AskPathView extends JDialog
         lowestPane.add(okButton);
         this.add(lowestPane);
 
-        JLabel[] labels = {distanceLabel, latitudeLabel, longitudeLabel};
-        JTextField[] fields = {distance, latitude, longitude};
+        JLabel[] labels = {distanceLabel, latitudeLabelStart, longitudeLabelStart ,latitudeLabelEnd ,longitudeLabelEnd };
+        JTextField[] fields = {distance, latitudeStart, longitudeStart, latitudeEnd, longitudeEnd };
 
         int numPairs = labels.length;
 
@@ -50,7 +54,7 @@ public class AskPathView extends JDialog
 
         //Lay out the panel.
         SpringUtilities.makeCompactGrid(midPane, //parent
-                                        3, 2,
+                                        5, 2,
                                         3, 3,  //initX, initY
                                         16, 3); //xPad, yPad
 

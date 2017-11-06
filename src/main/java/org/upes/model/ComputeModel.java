@@ -16,6 +16,8 @@ import org.geotools.referencing.CRS;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.GeometryDescriptor;
+import org.opengis.filter.identity.FeatureId;
+import org.opengis.geometry.BoundingBox;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
@@ -33,6 +35,22 @@ public class ComputeModel extends SimpleModel
 {
     public List<Patrol> patrols = new ArrayList<Patrol>();
 
+    public FeatureId getStartGrid() {
+        return startGrid;
+    }
+
+    public void setStartGrid(FeatureId startGrid) {
+        this.startGrid = startGrid;
+    }
+
+    public FeatureId getEndGrid() {
+        return endGrid;
+    }
+
+    public void setEndGrid(FeatureId endGrid) {
+        this.endGrid = endGrid;
+    }
+
     private enum GeomType {
         POLYGON,
         LINE,
@@ -42,6 +60,8 @@ public class ComputeModel extends SimpleModel
     private LinkedList<Beat> scoreResult = null;
     private ArrayList<Beat> sortedBeats = null;
     private org.opengis.geometry.Envelope region=null;
+    private FeatureId startGrid=null;
+    private FeatureId endGrid=null;
 
     public void setRegion(org.opengis.geometry.Envelope eve)
     {
@@ -301,7 +321,6 @@ public class ComputeModel extends SimpleModel
                     break;
                 case LINE:
                     v = intersection.getLength();
-                    if(currBeat.getValue()!=0)
                         score = classification.getScore(layer.getTitle());
                     break;
                 case POINT:
@@ -440,6 +459,7 @@ public class ComputeModel extends SimpleModel
             CoordinateReferenceSystem gridCRS=beatLayer.getFeatureSource().getSchema().getCoordinateReferenceSystem();
             ReferencedEnvelope ref=((ReferencedEnvelope) getRegion()).transform(gridCRS,true);
             beatIter = grabFeaturesInBoundingBox(ref, getLayer(Constants.GRID_NAME)).features();
+            System.out.print(" === "+scoreResult.size()+" === "+grabFeaturesInBoundingBox(ref, getLayer(Constants.GRID_NAME)).size());
             while (beatIter.hasNext())
             {
                 currBeat = beatScoreIter.next();
@@ -531,16 +551,18 @@ public class ComputeModel extends SimpleModel
             Iterator<Beat> beatitr = scoreResult.iterator();
             while (beatitr.hasNext()) {
                 Beat currbeat = beatitr.next();
-                SimpleFeatureIterator innerBeat = (SimpleFeatureIterator) layer.getFeatureSource().getFeatures().features();
+                ReferencedEnvelope bbox=new ReferencedEnvelope(layer.getFeatureSource().getSchema().getCoordinateReferenceSystem());
+                bbox.expandToInclude(currbeat.getGeometry().getEnvelopeInternal());
+                SimpleFeatureCollection col=grabFeaturesInBoundingBox(bbox,layer);
+                SimpleFeatureIterator innerBeat = col.features();
+
 //                    System.out.print(currbeat.getId() + "  :-");
                 while (innerBeat.hasNext()) {
-                    SimpleFeature beat = innerBeat.next();
-                    Geometry currbeatgeom = currbeat.getGeometry();
-                    Geometry beatgeom = (Geometry) beat.getDefaultGeometry();
-                    int index = -1;
-                    if (currbeatgeom.intersects(beatgeom)) {
+
+                    SimpleFeature next=innerBeat.next();
+                    int index=-1;
                         for (Beat b : scoreResult) {
-                            if ((b.getId().toString().equals(beat.getID().toString())) && (!currbeat.getId().toString().equals(b.getId().toString()))) {
+                            if ((b.getId().toString().equals(next.getID().toString())) && (!currbeat.getId().toString().equals(b.getId().toString()))) {
                                 index = scoreResult.indexOf(b);
                                 break;
                             }
@@ -548,12 +570,13 @@ public class ComputeModel extends SimpleModel
                         if (index >= 0)
                             currbeat.addNeighbour(scoreResult.get(index));
 //                            System.out.print(beat.getID() + "  ");
-                    }
                 }
 //                    System.out.println("");
             }
 
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

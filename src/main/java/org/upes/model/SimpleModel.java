@@ -285,6 +285,11 @@ public class SimpleModel
         if (layer==null)
             return null ;
 
+        if(!bbox.getCoordinateReferenceSystem().equals(layer.getFeatureSource().getSchema().getCoordinateReferenceSystem()))
+        {
+            bbox=bbox.toBounds(layer.getFeatureSource().getSchema().getCoordinateReferenceSystem());
+        }
+
         FilterFactory2 ff     = CommonFactoryFinder.getFilterFactory2();
 
         FeatureSource<?, ?> featureSource = layer.getFeatureSource();

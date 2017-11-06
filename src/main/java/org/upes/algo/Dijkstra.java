@@ -15,6 +15,7 @@ public class Dijkstra
     private NodeBeat current;
 
     private double factorScore;
+    private double toTravel=0;
 
     public Dijkstra(double factorScore)
     {
@@ -54,13 +55,35 @@ public class Dijkstra
         @Override
         public boolean isFinished(NodeBeat current)
         {
-            return current.distance > distance;
+            return  current.distance > distance;
         }
 
         @Override
         public boolean isPathFound(NodeBeat current)
         {
             return true;
+        }
+    }
+
+    private class DistanceBeatFo implements Fo
+    {
+        double distance;
+
+        public DistanceBeatFo(double distance)
+        {
+            this.distance = distance;
+        }
+
+        @Override
+        public boolean isFinished(NodeBeat current)
+        {
+            return  (current.distance > distance || end == current);
+        }
+
+        @Override
+        public boolean isPathFound(NodeBeat current)
+        {
+            return end == current;
         }
     }
 
@@ -111,10 +134,11 @@ public class Dijkstra
         return pathFinding(beats, startB, endB, beatFo);
     }
 
-    public List<Beat> pathFinding(Collection<Beat> beats, Beat startB, double distance)
+    public List<Beat> pathFinding(Collection<Beat> beats, Beat startB,Beat endB, double distance)
     {
-        DistanceFo distanceFo = new DistanceFo(distance);
-        return pathFinding(beats, startB, null, distanceFo);
+        DistanceBeatFo distanceFo = new DistanceBeatFo(distance);
+        toTravel=distance;
+        return pathFinding(beats, startB, endB, distanceFo);
     }
 
     private List<Beat> pathFinding(Collection<Beat> beats, Beat startB, Beat endB, Fo condition)
@@ -167,13 +191,13 @@ public class Dijkstra
         while(opLi.hasNext())
         {
             NodeBeat tmp = (NodeBeat) opLi.next();
-            if(best.tScore(factorScore) > tmp.tScore(factorScore))
+            if(best.tScore(factorScore, end ,toTravel ) > tmp.tScore(factorScore , end , toTravel))
             {
                 best = tmp;
             }
-            else if(best.tScore(factorScore) == tmp.tScore(factorScore))
+            else if(best.tScore(factorScore , end, toTravel) == tmp.tScore(factorScore , end , toTravel))
             {
-                if(best.tScore(factorScore) > tmp.tScore(factorScore))
+                //if(best.tScore(factorScore , end) > tmp.tScore(factorScore , end))
                     best = tmp;
             }
         }
@@ -200,7 +224,7 @@ public class Dijkstra
                     e.printStackTrace();
                 }
                 clone.computeDisntance(current);
-                if(clone.tScore(factorScore) < nodes.get(i).tScore(factorScore))
+                if(clone.tScore(factorScore, end, toTravel) < nodes.get(i).tScore(factorScore, end, toTravel))
                 {
                     nodes.get(i).previous = current;
                     nodes.get(i).next = null;
