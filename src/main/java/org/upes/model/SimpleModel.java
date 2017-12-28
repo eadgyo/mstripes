@@ -27,13 +27,11 @@ import org.upes.Constants;
 import org.upes.MyStyleFactory;
 import org.upes.PersonalConstants;
 
+import javax.swing.*;
 import javax.swing.table.TableModel;
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Vector;
+import java.util.*;
 
 /**
  * Created by eadgyo on 12/07/17.
@@ -53,14 +51,18 @@ public class SimpleModel
     protected Classification classification= new Classification();
     protected MyStyleFactory               myStyleFactory;
 
+    protected JsonOp jsonOp;
+    protected SqlOp sqlOp ;
 
     protected HashMap<String, String> layerToSourcePath = new HashMap<>();
 
-    public SimpleModel()
+    public SimpleModel(JsonOp jsonOp, SqlOp sqlOp)
     {
         map = new MapContent();
         tableModel = new MyTableModel();
         myStyleFactory=new MyStyleFactory();
+        this.jsonOp = jsonOp;
+        this.sqlOp = sqlOp;
     }
 
     public Classification getClassification()
@@ -137,7 +139,7 @@ public class SimpleModel
     public Layer loadFile(File sourceFile) throws IOException
     {
         this.sourceFile = sourceFile;
-
+        System.out.println(sourceFile);
         // Create the factory
         FileDataStore store = FileDataStoreFinder.getDataStore(sourceFile);
         featureSource = store.getFeatureSource();
@@ -146,8 +148,8 @@ public class SimpleModel
         Layer addedLayer = loadMap();
         invalidData = true;
 
-        // Compute road length if available
-        if (addedLayer != null)
+
+        if (addedLayer != null && jsonOp.getType(sourceFile.toString()).equals("Beats") )
         {
             // Load the dbf file
             loadDbf(addedLayer);
@@ -205,12 +207,16 @@ public class SimpleModel
                 Vector        vector  = new Vector<>();
                 for (Property attribute : feature.getProperties())
                 {
-                    int columnRow = tableModel.addColumnIfNeeded(attribute.getName().toString());
-                    while (columnRow >= vector.size())
+                    if(attribute.getName().toString().equals("BEAT_N"))
                     {
-                        vector.add("");
+                        int columnRow = tableModel.addColumnIfNeeded(attribute.getName().toString());
+
+                        while (columnRow >= vector.size())
+                        {
+                            vector.add("");
+                        }
+                        vector.set(columnRow, attribute.getValue());
                     }
-                    vector.set(columnRow, attribute.getValue());
                 }
                 tableModel.addRow(feature.getName().toString(), vector);
             }
@@ -310,5 +316,24 @@ public class SimpleModel
     public Collection<String> getSourceLayers()
     {
         return layerToSourcePath.values();
+    }
+
+    public void bulkLoad()
+    {
+        ArrayList<String> fileList=jsonOp.getFiles();
+        if(fileList.isEmpty())
+        {
+            JOptionPane.showMessageDialog(null,"No File Registered","Error",JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        for(String file : fileList)
+        {
+            File tempFile = new File(file);
+            try {
+                loadFile(tempFile);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

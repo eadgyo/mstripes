@@ -18,7 +18,9 @@ public class View extends JFrame
     public LoadingPanel loadingPanel = new LoadingPanel();
 
     public OptionsDialog optionsDialog=new OptionsDialog(this);
+    public TypeDialog typeDialog = new TypeDialog(this);
     public AskPathView askPathView = new AskPathView(this);
+    public ScoresView scoresView = new ScoresView(this);
 
     public View()
     {

@@ -2,9 +2,8 @@ package org.upes.controller;
 
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.Point;
-import org.geotools.data.DataStore;
-import org.geotools.data.DataUtilities;
-import org.geotools.data.FileDataStoreFactorySpi;
+import jdk.nashorn.internal.ir.debug.JSONWriter;
+import org.geotools.data.*;
 import org.geotools.data.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
@@ -17,6 +16,8 @@ import org.geotools.map.MapContent;
 import org.geotools.styling.Style;
 import org.geotools.swing.event.MapMouseEvent;
 import org.geotools.swing.event.MapMouseListener;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.FilterFactory2;
@@ -28,6 +29,7 @@ import org.upes.utils.MapServer;
 import org.upes.utils.StyleUtils;
 import org.upes.utils.ZipMem;
 import org.upes.view.MapPanel;
+import org.upes.view.ScoresView;
 import org.upes.view.View;
 
 import javax.swing.*;
@@ -39,6 +41,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
@@ -52,6 +55,8 @@ public class Controller
     private View         view;
     private MapPanel     mapPanel;
     private ComputeModel computeModel;
+    private  JsonOp jsonOp;
+    private  SqlOp sqlOp;
 
     private LoadAction    loadAction    = new LoadAction();
     private AddAction     addAction     = new AddAction();
@@ -62,34 +67,34 @@ public class Controller
     private CalcAction calcAction = new CalcAction();
     private PathAction pathAction = new PathAction();
     private OkPathAction okPathAction = new OkPathAction();
+    private AssignScoreAction assignScoreAction = new AssignScoreAction();
+    private AssignScoreOkAction assignScoreOkAction = new AssignScoreOkAction();
+    boolean fileSelected = false;
 
     protected MapServer mapServer;
 
-    public Controller(View view, ComputeModel computeModel)
+    public Controller(View view, ComputeModel computeModel, JsonOp jsonOp, SqlOp sqlOp)
     {
         this.view = view;
         this.mapPanel = view.mapPanel;
         this.computeModel = computeModel;
+
+        this.jsonOp = jsonOp;
+        this.sqlOp = sqlOp;
 
         // Set actions
         mapPanel.loadButton.setAction(loadAction);
         mapPanel.addButton.setAction(addAction);
         view.layerDialog.okButton.setAction(okLayerAction);
         mapPanel.deleteButton.setAction(deleteAction);
-        view.optionsDialog.ok.setAction(okClassification);
+        view.typeDialog.ok.setAction(okClassification);
         mapPanel.calculateButton.setAction(calcAction);
         mapPanel.pathButton.setAction(pathAction);
+        mapPanel.scoreButton.setAction(assignScoreAction);
+        view.scoresView.OkScore.setAction(assignScoreOkAction);
 
         view.askPathView.okButton.setAction(okPathAction);
 
-        addAction.setEnabled(false);
-        deleteAction.setEnabled(false);
-
-        for(int i=0; i< mapPanel.toolBar.getComponentCount();i++)
-        {
-            if(mapPanel.toolBar.getComponentAtIndex(i).getClass().equals(JButton.class))
-                mapPanel.toolBar.getComponentAtIndex(i).setEnabled(false);
-        }
         // Link map content
         mapPanel.mapPane.setMapContent(computeModel.getMap());
         view.layerDialog.mapLayerTable.setMapPane(view.mapPanel.mapPane);
@@ -97,10 +102,10 @@ public class Controller
         // Link Table
         view.mapPanel.table.setModel(computeModel.getTableModel());
 
-        Classification classification = computeModel.getClassification();
-        view.mapPanel.classificationView.neutralList.setModel(classification.getNeutral());
-        view.mapPanel.classificationView.supportiveList.setModel(classification.getSupportive());
-        view.mapPanel.classificationView.defectiveList.setModel(classification.getDefective());
+//        Classification classification = computeModel.getClassification();
+//        view.mapPanel.classificationView.neutralList.setModel(classification.getNeutral());
+//        view.mapPanel.classificationView.supportiveList.setModel(classification.getSupportive());
+//        view.mapPanel.classificationView.defectiveList.setModel(classification.getDefective());
 
         // Add listener
         mapPanel.mapPane.addMouseListener(new MouseMapListener());
@@ -117,8 +122,25 @@ public class Controller
             e.printStackTrace();
         }
 
-        mapPanel.calculateButton.setEnabled(false);
-        mapPanel.pathButton.setEnabled(false);
+        // Check if shpfiles are registered
+        if(jsonOp.ifCreated())
+        {
+            mapPanel.loadButton.setEnabled(false);
+            computeModel.bulkLoad();
+        }
+        else
+        {
+            for(int i=0; i< mapPanel.toolBar.getComponentCount();i++)
+            {
+                if(mapPanel.toolBar.getComponentAtIndex(i).getClass().equals(JButton.class))
+                    mapPanel.toolBar.getComponentAtIndex(i).setEnabled(false);
+            }
+
+            mapPanel.calculateButton.setEnabled(false);
+            mapPanel.pathButton.setEnabled(false);
+            addAction.setEnabled(false);
+            deleteAction.setEnabled(false);
+        }
     }
 
     private class AddAction extends AbstractAction {
@@ -144,8 +166,7 @@ public class Controller
             if (result==JFileChooser.CANCEL_OPTION)
                 return;
 
-            view.optionsDialog.setVisible(true);
-            int selectedOption = view.optionsDialog.getSelectedOption();
+            //int selectedOption = view.optionsDialog.getSelectedOption();
 
             Layer layer = null;
             try
@@ -158,10 +179,42 @@ public class Controller
                         JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            computeModel.addToClassification(selectedOption, layer);
+      //      computeModel.addToClassification(selectedOption, layer);
             computeModel.setInitPath(sourceFile.getParent());
             repaint();
 
+        }
+    }
+
+    private class AssignScoreAction extends AbstractAction{
+
+        public AssignScoreAction()
+        {
+            super(Constants.NAME_ASSIGN_SCORE);
+            this.putValue(SHORT_DESCRIPTION,Constants.DESC_ASSIGN_SCORE);
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+
+            HashMap<String,String> hm = jsonOp.getScores();
+            view.scoresView.setTextFieldValues(hm);
+            view.scoresView.setVisible(true);
+        }
+    }
+
+    private class AssignScoreOkAction extends AbstractAction
+    {
+        public AssignScoreOkAction()
+        {
+            super(Constants.NAME_OK_DIALOG);
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            jsonOp.setScores(view.scoresView.getTextFieldValues());
+            jsonOp.updateIndiScore();
+            view.scoresView.setVisible(false);
         }
     }
 
@@ -186,8 +239,16 @@ public class Controller
             if (resullt==JFileChooser.CANCEL_OPTION)
                 return;
 
+            view.typeDialog.name.setText(sourceFile.getName());
+            fileSelected = false ;
+            view.typeDialog.setVisible(true);
+
+            if(fileSelected == false)
+                return;
+
             try
             {
+               if( jsonOp.updateJson(sourceFile,view.typeDialog.nameList.getSelectedItem().toString()))
                 computeModel.loadFile(sourceFile);
             }
             catch (IOException e)
@@ -198,9 +259,10 @@ public class Controller
             }
 
             computeModel.setInitPath(sourceFile.getParent());
+
             addAction.setEnabled(true);
             deleteAction.setEnabled(true);
-            loadAction.setEnabled(false);
+
             for(int i=0;i<mapPanel.toolBar.getComponentCount();i++)
             {
                 if(mapPanel.toolBar.getComponentAtIndex(i).getClass().equals(JButton.class))
@@ -283,7 +345,7 @@ public class Controller
                 selectedFeatures.add(beat.getId());
             }
 
-            Layer beatLayer = computeModel.getLayer(Constants.GRID_NAME);
+            Layer beatLayer = computeModel.getLayer(jsonOp.getGRID_NAME());
             String geometryAttributeName = beatLayer.getFeatureSource().getSchema().getGeometryDescriptor().getLocalName();
             displaySelectedFeatures(beatLayer, selectedFeatures, geometryAttributeName);
         }
@@ -298,7 +360,8 @@ public class Controller
         @Override
         public void actionPerformed(ActionEvent actionEvent)
         {
-            view.optionsDialog.setVisible(false);
+            fileSelected = true;
+            view.typeDialog.setVisible(false);
         }
     }
 
@@ -338,6 +401,11 @@ public class Controller
         @Override
         public void actionPerformed(ActionEvent e)
         {
+            if(sqlOp.ifexists()==false)
+            {
+                sqlOp.createDB();
+            }
+
             computeModel.calculateScore();
             displayCriticalColor();
         }
@@ -345,9 +413,9 @@ public class Controller
 
     SimpleFeatureCollection grabFeaturesInMouseBox(double x, double y) throws Exception
     {
-        ReferencedEnvelope bbox = new ReferencedEnvelope(computeModel.getLayer(Constants.GRID_NAME).getFeatureSource().getSchema().getCoordinateReferenceSystem());
+        ReferencedEnvelope bbox = new ReferencedEnvelope(computeModel.getLayer(jsonOp.getGRID_NAME()).getFeatureSource().getSchema().getCoordinateReferenceSystem());
         bbox.init(x-1, x+1, y-1, y+1);
-        return computeModel.grabFeaturesInBoundingBox(bbox, computeModel.getLayer(Constants.GRID_NAME));
+        return computeModel.grabFeaturesInBoundingBox(bbox, computeModel.getLayer(jsonOp.getGRID_NAME()));
     }
 
     public Beat  selectBeat(double x, double y)
@@ -382,7 +450,7 @@ public class Controller
         SimpleFeatureCollection grabFeaturesInMouseBox(MapMouseEvent ev) throws Exception
         {
             ReferencedEnvelope bbox = ev.getEnvelopeByPixels(2);
-            return computeModel.grabFeaturesInBoundingBox(bbox, computeModel.getLayer(Constants.GRID_NAME));
+            return computeModel.grabFeaturesInBoundingBox(bbox, computeModel.getLayer(jsonOp.getGRID_NAME()));
         }
 
         @Override
@@ -460,14 +528,14 @@ public class Controller
                        }
 
 /*
-                       if (fa.getName().toString().equals(Constants.GRID_NAME))
+                       if (fa.getName().toString().equals(jsonOp.getGRID_NAME()))
                        {
                            int col_index = view.mapPanel.table.getColumn(Constants.BEAT_FEATURE_NAME).getModelIndex();
                            MyTableModel tableModel = (MyTableModel) computeModel.getTableModel();
                            int index = -1;
 
-                           int startIndex = tableModel.getLayerStartIndex(Constants.BEAT_NAME);
-                           int endIndex       = tableModel.getLayerEndIndex(Constants.BEAT_NAME);
+                           int startIndex = tableModel.getLayerStartIndex(jsonOp.getBEAT_NAME());
+                           int endIndex       = tableModel.getLayerEndIndex(jsonOp.getBEAT_NAME());
 
                            for (int row = startIndex; row < endIndex; row++)
                            {
@@ -485,7 +553,7 @@ public class Controller
                                view.mapPanel.table.changeSelection(index, col_index, false, false);
                        }*/
                    }
-                   displaySelectedFeatures(computeModel.getLayer(Constants.GRID_NAME),Ids,computeModel.getLayer(Constants.GRID_NAME).getFeatureSource().getSchema().getGeometryDescriptor().getLocalName());
+                   displaySelectedFeatures(computeModel.getLayer(jsonOp.getGRID_NAME()),Ids,computeModel.getLayer(jsonOp.getGRID_NAME()).getFeatureSource().getSchema().getGeometryDescriptor().getLocalName());
                } catch (Exception e) {
                    e.printStackTrace();
                }
@@ -520,15 +588,15 @@ public class Controller
 
     public void updateSelectedLayers()
     {
-        Layer        beatLayer    = computeModel.getLayer(Constants.BEAT_NAME);
+        Layer        beatLayer    = computeModel.getLayer(jsonOp.getBEAT_NAME());
         if (beatLayer == null)
             return;
 
         MyTableModel tableModel   = (MyTableModel) computeModel.getTableModel();
         int[]        selectedRows = mapPanel.table.getSelectedRows();
         int          column       = tableModel.getColumn(Constants.BEAT_FEATURE_NAME);
-        int          startBeat    = tableModel.getLayerStartIndex(Constants.BEAT_NAME);
-        int          endBeat      = tableModel.getLayerEndIndex(Constants.BEAT_NAME);
+        int          startBeat    = tableModel.getLayerStartIndex(jsonOp.getBEAT_NAME());
+        int          endBeat      = tableModel.getLayerEndIndex(jsonOp.getBEAT_NAME());
 
         for (int selectedRow : selectedRows)
         {
@@ -556,7 +624,7 @@ public class Controller
         RuleEntry defaultEntry ;
         RuleEntry selectedEntry ;
 
-        if (layer.getTitle().equals(Constants.BEAT_NAME))
+        if (layer.getTitle().equals(jsonOp.getBEAT_NAME()))
         {
             defaultEntry = new RuleEntry(Color.BLACK, Color.LIGHT_GRAY, 1.0);
             selectedEntry = new RuleEntry(Color.BLUE, Color.LIGHT_GRAY, 2.0);
@@ -582,14 +650,14 @@ public class Controller
                                                        selectedEntry, geometryAttributeName);
         }
 
-        if (layer.getTitle().equals(Constants.BEAT_NAME) && computeModel.isInvalidData()) {
+        if (layer.getTitle().equals(jsonOp.getBEAT_NAME()) && computeModel.isInvalidData()) {
             try {
                 FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2();
                 SimpleFeatureCollection col = (SimpleFeatureCollection) layer.getFeatureSource().getFeatures(ff.id(IDs));
                 org.opengis.geometry.Envelope region = col.getBounds();
                 computeModel.setRegion(region);
                 mapPanel.mapPane.setDisplayArea(region);
-                Layer grid = computeModel.getLayer(Constants.GRID_NAME);
+                Layer grid = computeModel.getLayer(jsonOp.getGRID_NAME());
 
                 computeModel.initScoreData(grid);
 
@@ -604,7 +672,7 @@ public class Controller
 
     public void displayCriticalColor()
     {
-        Layer        beatLayer    = computeModel.getLayer(Constants.GRID_NAME);
+        Layer        beatLayer    = computeModel.getLayer(jsonOp.getGRID_NAME());
         if (beatLayer == null)
             return;
         String geometryAttributeName = beatLayer.getFeatureSource().getSchema().getGeometryDescriptor().getLocalName();

@@ -21,6 +21,9 @@ public interface Constants
     String NAME_DEL_MAP="Customize";
     String DESC_DEL_MAP="Customize layers from map";
 
+    String NAME_ASSIGN_SCORE = "Assign Score";
+    String DESC_ASSIGN_SCORE = "Assign cost factor to each type";
+
     String NAME_PATH = "Path";
     String DESC_PATH = "Create path for patrols";
 
@@ -39,6 +42,8 @@ public interface Constants
     String StrDEFECTIVE="Defective";
     String StrSUPPORTIVE="Supportive";
     String StrNONE="None";
+
+    String CBOXHEADING = "Select Layer Type: ";
 
     // Image locations
     String IMAGE_UPES_PATH = "upes.png";
@@ -61,7 +66,7 @@ public interface Constants
     String ROAD_NAME_FILE = "forst_road_core";
     String PATROL_CHOWKIS = "Patrolling_camp";
     String WIRELESS_CHOWKI="Wireless_station";
-    String BEAT_NAME = "BEAT";
+//    String BEAT_NAME = "BEAT";
     String BEAT_FEATURE_NAME = "BEAT_N";
     String ATTRIBUTE_STATUS = "STATUS";
     double FACTOR_SCORE = 1000;
@@ -86,5 +91,11 @@ public interface Constants
     String END_LONGITUDE_LABEL = "End Point Longitude";
     String END_LATITUDE_LABEL = "End Point Latitude";
 
-    String GRID_NAME="grd1ha";
+//    String GRID_NAME="grd1ha";
+
+    // List of Layer Types
+    String TYPES[]={"Water Bodies","Electric Poles","Dense Forest Cover","Grasslands","Poaching","Roads","Patrol Chowkis","Neutral Element","Grid","Beats"};
+
+    String JSONPATH = "F:/intern/mstripes_java2/mstripes/shplist.json";
+    String SQLPATH = "F:/intern/mstripes_java2/mstripes/grid_values.db";
 }

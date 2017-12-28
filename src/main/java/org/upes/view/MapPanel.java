@@ -16,7 +16,7 @@ import java.util.Set;
 public class MapPanel extends JPanel
 {
     public JPanel leftPart = new JPanel(new BorderLayout());
-    public ClassificationView classificationView = new ClassificationView();
+  //  public ClassificationView classificationView = new ClassificationView();
     public JPanel middlePart = new JPanel(new BorderLayout());
     public JPanel rightPart = new JPanel();
 
@@ -25,6 +25,7 @@ public class MapPanel extends JPanel
     public JButton deleteButton = new JButton();
     public JButton calculateButton = new JButton();
     public JButton pathButton = new JButton();
+    public JButton scoreButton = new JButton();
 
     public JMapPane    mapPane     = new JMapPane();
     public JTable      table       = new JTable();
@@ -40,10 +41,15 @@ public class MapPanel extends JPanel
         this.setLayout(new BorderLayout());
         // Left part
         JPanel buttonsPanel = new JPanel();
-        buttonsPanel.setLayout(new FlowLayout(FlowLayout.CENTER,12,80));
+//        buttonsPanel.setLayout(new FlowLayout(FlowLayout.CENTER,12,80));
+        buttonsPanel.setLayout(new BoxLayout(buttonsPanel,BoxLayout.Y_AXIS));
+        buttonsPanel.add(Box.createRigidArea(new Dimension(0,80)));
+        buttonsPanel.add(Box.createRigidArea(new Dimension(60,0)));
         buttonsPanel.add(loadButton);
+        buttonsPanel.add(Box.createRigidArea(new Dimension(0,10)));
+        buttonsPanel.add(scoreButton);
         leftPart.add(buttonsPanel, BorderLayout.NORTH);
-        leftPart.add(classificationView, BorderLayout.CENTER);
+      //  leftPart.add(classificationView, BorderLayout.CENTER);
         leftPart.add(scrollTable, BorderLayout.SOUTH);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 

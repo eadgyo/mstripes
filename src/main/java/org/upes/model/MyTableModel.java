@@ -25,7 +25,7 @@ public class MyTableModel extends DefaultTableModel
     public int addColumnIfNeeded(String columnName)
     {
         Integer index = colNameIndex.get(columnName);
-        if (index == null)
+        if (index == null )
         {
             index = addColumn(columnName);
         }

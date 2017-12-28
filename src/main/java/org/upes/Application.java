@@ -2,6 +2,8 @@ package org.upes;
 
 import org.upes.controller.Controller;
 import org.upes.model.ComputeModel;
+import org.upes.model.JsonOp;
+import org.upes.model.SqlOp;
 import org.upes.view.View;
 
 /**
@@ -18,14 +20,21 @@ public class Application
     // Controller
     private Controller controller;
 
+    private JsonOp jsonOp;
+
+    private SqlOp sqlOp;
+
     public Application()
     {
 
+        jsonOp = new JsonOp();
+        sqlOp = new SqlOp();
         view = new View();
-        computeModel = new ComputeModel();
-        controller = new Controller(view, computeModel);
-        view.optionsDialog.pack();
+        computeModel = new ComputeModel(jsonOp , sqlOp);
+        controller = new Controller(view, computeModel , jsonOp ,sqlOp);
+        view.typeDialog.pack();
         view.askPathView.pack();
+        view.scoresView.pack();
         launchApp();
 
     }
