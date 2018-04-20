@@ -1,8 +1,8 @@
 package org.upes.model;
 
 import com.vividsolutions.jts.geom.*;
+import com.vividsolutions.jts.util.GeometricShapeFactory;
 import org.geotools.data.FeatureSource;
-import org.geotools.data.Query;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.factory.CommonFactoryFinder;
@@ -11,8 +11,6 @@ import org.geotools.feature.DefaultFeatureCollection;
 import org.geotools.feature.FeatureCollection;
 import org.geotools.feature.FeatureIterator;
 import org.geotools.filter.AreaFunction;
-import org.geotools.filter.text.cql2.CQL;
-import org.geotools.filter.text.cql2.CQLException;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.FeatureLayer;
@@ -24,14 +22,13 @@ import org.opengis.feature.type.GeometryDescriptor;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.filter.identity.FeatureId;
-import org.opengis.geometry.BoundingBox;
 import org.opengis.referencing.FactoryException;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
 import org.upes.Constants;
+import sun.java2d.pipe.SpanShapeRenderer;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
@@ -280,13 +277,15 @@ public class ComputeModel extends SimpleModel
 
                 ArrayList<ArrayList<String>> listoflist = new ArrayList<>();
                 int a = 0;
-                System.out.println(next.getAttribute("BEAT_N")+"  "+  col.size());
+                Geometry beat = (Geometry) next.getDefaultGeometry();
+                beat = JTS.transform(beat,mathTransform);
+
                 while (gridIter.hasNext())
                 {
-                    Geometry beat = (Geometry) next.getDefaultGeometry();
                     SimpleFeature grid = gridIter.next();
                     Geometry gridGeom = (Geometry) grid.getDefaultGeometry();
-                    beat = JTS.transform(beat,mathTransform);
+                    double latitude = gridGeom.getCentroid().getX();
+                    double longitude = gridGeom.getCentroid().getY();
                     if(gridGeom.intersects(beat))
                     {
 //                        a++;
@@ -299,16 +298,17 @@ public class ComputeModel extends SimpleModel
                                 temp.add(null);
                             }
                         }
+
+                        temp.add(String.valueOf(latitude));
+                        temp.add(String.valueOf(longitude));
                         listoflist.add(temp);
                     }
 
                 }
 //                System.out.println(a);
                 sqlOp.insertNeighbours((String) next.getAttribute("BEAT_N"),listoflist);
-                System.out.println("Inserted");
             }
         System.out.println("Done");
-
         } catch (IOException e) {
             e.printStackTrace();
         } catch (TransformException e) {
@@ -324,22 +324,12 @@ public class ComputeModel extends SimpleModel
 
     public void calculateScore()
     {
-        Iterator<Layer> iterator = map.layers().iterator();
-        calculate();
-//        calculateAndStore();
-        while (iterator.hasNext())
+        if(sqlOp.isDbEmpty())
         {
-            Layer next = iterator.next();
-
-            calculate(next);
-
+            calculateAndStore();
         }
-        findNeighbours(jsonOp.getGRID_NAME());
+        calculate();
 
-        updateTableScore();
-        updateRankAndSort();
-
-        invalidData = false;
     }
 
     public void updateTableScore()
@@ -405,7 +395,29 @@ public class ComputeModel extends SimpleModel
         currBeat.addScore(layer.getTitle(), score);
     }
 
-    private SimpleFeatureCollection getCollidingFeature(Geometry beatGeometry, Layer layer,
+    public SimpleFeatureCollection getFeaturesinCircle(Double latitude,Double longitude,int radius)
+    {
+        GeometricShapeFactory shapeFactory = new GeometricShapeFactory();
+        shapeFactory.setNumPoints(32);
+        shapeFactory.setCentre(new Coordinate(latitude,longitude));
+        shapeFactory.setSize(radius*1000*2);
+        Geometry circle = shapeFactory.createCircle();
+        SimpleFeatureCollection col = getCollidingFeature(circle,getLayer(jsonOp.getGRID_NAME()),getLayer(jsonOp.getGRID_NAME()).getFeatureSource().getSchema().getCoordinateReferenceSystem());
+        SimpleFeatureIterator itr = col.features();
+        DefaultFeatureCollection circlefeatures = new DefaultFeatureCollection();
+       while (itr.hasNext())
+       {
+           SimpleFeature feature = itr.next();
+           Geometry geom = (Geometry) feature.getDefaultGeometry();
+           if (circle.contains(geom))
+           {
+               circlefeatures.add(feature);
+           }
+       }
+       return circlefeatures;
+    }
+
+    public SimpleFeatureCollection getCollidingFeature(Geometry beatGeometry, Layer layer,
                                                         CoordinateReferenceSystem ref)
     {
 
@@ -509,36 +521,58 @@ public class ComputeModel extends SimpleModel
     public void calculate()
     {
         Layer gridLayer = getLayer(jsonOp.getGRID_NAME());
+
         try {
                 Iterator<Layer> iterator = map.layers().iterator();
                 FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
+                deletedFeatures = sqlOp.getDeletedFeatures();
+
                 while(iterator.hasNext())
                 {
+                    HashMap<FeatureId,Double> ParentSet = new HashMap<>();
                     Layer next = iterator.next();
+                    GeomType geomType = getGeometryType(next);
+                    HashMap<String,Double> featureSet = new HashMap<>();
+                    String layerType = jsonOp.getType(layerToSourcePath.get(next.getTitle()));
                     if(jsonOp.isCalcRequired(next))
                     {
                         SimpleFeatureCollection features = (SimpleFeatureCollection) next.getFeatureSource().getFeatures();
                         SimpleFeatureIterator featureIterator = features.features();
+                        Double jsonscore = Double.valueOf(jsonOp.getIndiScores().get(next.getTitle()));
+
                         while (featureIterator.hasNext())
                         {
+                            Double score = jsonscore;
                             SimpleFeature tempFeature = featureIterator.next();
-                            MathTransform transform = getTransformGeometry(next,gridLayer);
-                            Geometry currFeatGeom = (Geometry) tempFeature.getDefaultGeometry();
-                            Geometry tempGeom = JTS.transform(currFeatGeom,transform);
-                            SimpleFeatureCollection grids = getCollidingFeature(tempGeom,gridLayer,gridLayer.getFeatureSource().getSchema().getCoordinateReferenceSystem());
-                            ArrayList<String> Ids = new ArrayList<>();
-                            FeatureIterator colIter = grids.features();
-                            while (colIter.hasNext())
+                            String name = tempFeature.getID();
+                            int r = sqlOp.ifFeatureCalcRequired(name,score);
+                            if(r == Constants.NOT_REGISTERED || r == Constants.SCORE_CHANGED)
                             {
-                                Ids.add(((SimpleFeature)colIter.next()).getID());
-                            }
-                            registerScore(tempGeom,gridLayer,Ids, ff);
+                                if (r == Constants.SCORE_CHANGED)
+                                { score = sqlOp.getNewScore(name,score);
+                                }
 
+                                MathTransform transform = getTransformGeometry(next,gridLayer);
+                                Geometry currFeatGeom = (Geometry) tempFeature.getDefaultGeometry();
+                                Geometry tempGeom = JTS.transform(currFeatGeom,transform);
+                                SimpleFeatureCollection grids = getCollidingFeature(tempGeom,gridLayer,gridLayer.getFeatureSource().getSchema().getCoordinateReferenceSystem());
+                                ArrayList<String> Ids = new ArrayList<>();
+                                FeatureIterator colIter = grids.features();
+                                while (colIter.hasNext())
+                                {
+                                    Ids.add(((SimpleFeature)colIter.next()).getID());
+                                }
+
+                                ParentSet.putAll(registerScore(tempGeom,gridLayer,Ids, ff, geomType, score));
+                                featureSet.put(name,jsonscore);
+                            }
                         }
+                        //Update Score
+                        sqlOp.updateScore(ParentSet);
+                        sqlOp.updateFeatures(featureSet,layerType);
+                        sqlOp.removeDeletedFeatures(deletedFeatures);
                     }
                 }
-
-
         } catch (IOException e) {
             e.printStackTrace();
         } catch (TransformException e) {
@@ -546,9 +580,9 @@ public class ComputeModel extends SimpleModel
         }
     }
 
-    public void registerScore(Geometry geometry, Layer gridLayer, ArrayList<String> Ids, FilterFactory2 ff) throws IOException {
+    public HashMap<FeatureId, Double> registerScore(Geometry geometry, Layer gridLayer, ArrayList<String> Ids, FilterFactory2 ff, GeomType geomType, Double score) throws IOException {
         HashMap<String,GridFeature> gridFeatureMap = sqlOp.findFeatures(Ids);
-        Set<String> set = new HashSet<>();
+        HashMap<FeatureId,Double> set = new HashMap<>();
         SimpleFeatureCollection col = (SimpleFeatureCollection) gridLayer.getFeatureSource().getFeatures();
         int count = 0;
         String startPoint = null;
@@ -563,21 +597,37 @@ public class ComputeModel extends SimpleModel
             count++;
         }
 
-        set=fill(geometry,col,startPoint,gridFeatureMap,set,ff);
-
+        set=fill(geometry,col,startPoint,gridFeatureMap,set,ff,geomType,score);
+        return set;
     }
 
-    public Set<String> fill(Geometry geometry, FeatureCollection col, String currentPos, HashMap<String, GridFeature> list, Set<String> set, FilterFactory2 ff)
+    public HashMap<FeatureId, Double> fill(Geometry geometry, FeatureCollection col, String currentPos, HashMap<String, GridFeature> list, HashMap<FeatureId, Double> set, FilterFactory2 ff, GeomType geomType, Double score)
     {
-        Filter filter = ff.id(ff.featureId(currentPos));
+        FeatureId current=ff.featureId(currentPos);
+        Filter filter = ff.id(current);
         SimpleFeatureCollection subcol = (SimpleFeatureCollection) col.subCollection(filter);
-        if(set.contains(currentPos) || !(geometry.intersects((Geometry) subcol.features().next().getDefaultGeometry())))
+        Geometry grid = (Geometry) subcol.features().next().getDefaultGeometry();
+        if(set.containsKey(current) || !(geometry.intersects((grid))))
             return set;
-        set.add(currentPos);
+
+        switch(geomType)
+        {
+            case POINT:
+                set.put(current,score);
+            break;
+            case LINE:
+                set.put(current,score);
+            break;
+            case POLYGON:
+                Geometry intersecton = geometry.intersection(grid);
+                Double tempscore = score*intersecton.getArea()/grid.getArea();
+                set.put(current,tempscore);
+        }
+
         ArrayList<String> arrayList = list.get(currentPos).getNeighbourList();
         for(String neighbour : arrayList)
         {
-            set=fill(geometry,col,neighbour,list,set,ff);
+            set=fill(geometry,col,neighbour,list,set,ff,geomType,score);
         }
         return set;
     }
@@ -657,7 +707,6 @@ public class ComputeModel extends SimpleModel
         } else {
             return GeomType.POINT;
         }
-
     }
 
     public void calculate_area(Layer layer)

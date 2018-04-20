@@ -23,15 +23,19 @@ import org.opengis.feature.type.FeatureType;
 import org.opengis.filter.Filter;
 import org.opengis.filter.FilterFactory2;
 import org.opengis.geometry.BoundingBox;
+import org.opengis.referencing.operation.MathTransform;
 import org.upes.Constants;
 import org.upes.MyStyleFactory;
 import org.upes.PersonalConstants;
+import org.upes.utils.StyleUtils;
 
 import javax.swing.*;
 import javax.swing.table.TableModel;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.List;
 
 /**
  * Created by eadgyo on 12/07/17.
@@ -41,6 +45,7 @@ public class SimpleModel
     protected File                sourceFile;
     protected SimpleFeatureSource featureSource;
     protected MapContent          map;
+    protected MapContent          mapDialog;
     protected MyTableModel        tableModel;
 
     protected boolean invalidData = false;
@@ -53,12 +58,13 @@ public class SimpleModel
 
     protected JsonOp jsonOp;
     protected SqlOp sqlOp ;
-
+    protected Set<String> deletedFeatures = new HashSet<>();
     protected HashMap<String, String> layerToSourcePath = new HashMap<>();
 
     public SimpleModel(JsonOp jsonOp, SqlOp sqlOp)
     {
         map = new MapContent();
+        mapDialog = new MapContent();
         tableModel = new MyTableModel();
         myStyleFactory=new MyStyleFactory();
         this.jsonOp = jsonOp;
@@ -95,18 +101,6 @@ public class SimpleModel
         {
             getMap().removeLayer(layer);
             tableModel.removeLayer(layer.getTitle());
-            if (classification.getSupportive().contains(layer.getTitle()))
-            {
-                classification.getSupportive().removeElement(layer.getTitle());
-            }
-            else if(classification.getNeutral().contains(layer.getTitle()))
-            {
-                classification.getNeutral().removeElement(layer.getTitle());
-            }
-            else if(classification.getDefective().contains(layer.getTitle()))
-            {
-                classification.getDefective().removeElement(layer.getTitle());
-            }
             layerToSourcePath.remove(layer.getTitle());
         }
     }
@@ -131,6 +125,20 @@ public class SimpleModel
         return map;
     }
 
+    public MapContent getMapDialog() {
+        return mapDialog;
+    }
+
+    public void clearMapDialog()
+    {
+        List<Layer> list = mapDialog.layers();
+        for(Layer layer : list)
+        {
+            mapDialog.removeLayer(layer);
+        }
+
+    }
+
     public TableModel getTableModel()
     {
         return tableModel;
@@ -139,7 +147,6 @@ public class SimpleModel
     public Layer loadFile(File sourceFile) throws IOException
     {
         this.sourceFile = sourceFile;
-        System.out.println(sourceFile);
         // Create the factory
         FileDataStore store = FileDataStoreFinder.getDataStore(sourceFile);
         featureSource = store.getFeatureSource();
@@ -164,6 +171,37 @@ public class SimpleModel
 
     public void checkLayer(Layer addedLayer)
     {}
+
+    public void loadMapDialog(ArrayList<String> files) throws IOException {
+
+        for (String file : files)
+        {
+            File source = new File(file);
+            FileDataStore store = FileDataStoreFinder.getDataStore(source);
+            SimpleFeatureSource tempFeatureSource = store.getFeatureSource();
+            DefaultFeatureCollection featureColl = new DefaultFeatureCollection();
+            SimpleFeature            next        = null;
+            SimpleFeatureIterator features =tempFeatureSource.getFeatures().features();
+
+            while (features.hasNext()) {
+                next = features.next();
+                Geometry geometry = (Geometry) next.getDefaultGeometry();
+                if (geometry != null && geometry.isValid()) {
+
+                    featureColl.add(next);
+                }
+            }
+
+//            Layer layer = getLayer(jsonOp.extractFileName(file));
+//            SimpleFeatureSource tempFeatureSource = (SimpleFeatureSource) layer.getFeatureSource();
+            String geometryAttributeName = tempFeatureSource.getSchema().getGeometryDescriptor().getLocalName();
+            RuleEntry ruleEntry = new RuleEntry(Color.BLACK,Color.WHITE,2.0,1.0);
+            Style style = StyleUtils.createDefaultStyle(ruleEntry,tempFeatureSource.getSchema().getGeometryDescriptor().getType(),geometryAttributeName);
+            Layer layer = new FeatureLayer(featureColl,style);
+            mapDialog.layers().add(layer);
+        }
+
+    }
 
     public Layer loadMap() {
 

@@ -1,14 +1,29 @@
 package org.upes.model;
 
+import org.opengis.filter.identity.FeatureId;
 import org.upes.Constants;
+import org.upes.algo.NodeGrid;
 
 import javax.swing.*;
 import java.io.File;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 
 public class SqlOp {
+
+    public SqlOp()
+    {
+        try {
+            Class.forName("org.sqlite.JDBC").newInstance();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, e.getStackTrace());
+        }
+    }
 
     public boolean ifexists()
     {
@@ -18,6 +33,67 @@ public class SqlOp {
             return true;
         else
             return false;
+    }
+
+    public boolean isDbEmpty() {
+        String url ="jdbc:sqlite:"+Constants.SQLPATH;
+        try (Connection conn = DriverManager.getConnection(url)) {
+            if (conn != null) {
+                String tableselect = "SELECT count(*) FROM grids ;";
+                Statement stmt = conn.createStatement();
+                ResultSet result = stmt.executeQuery(tableselect);
+                if(result.getInt("count(*)") == 0)
+                {
+                    return true;
+                }
+                else
+                    return false;
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+            JOptionPane.showMessageDialog(null, e.getStackTrace());
+        }
+        return true;
+    }
+
+    public int ifFeatureCalcRequired(String name, Double score)
+    {
+        String url ="jdbc:sqlite:"+Constants.SQLPATH;
+        try (Connection conn = DriverManager.getConnection(url)) {
+            if (conn != null) {
+                String tableselect = "SELECT score FROM Features WHERE FeatureID = '"+name+"';";
+                Statement stmt = conn.createStatement();
+                ResultSet result = stmt.executeQuery(tableselect);
+                if(!result.isBeforeFirst())
+                {return Constants.NOT_REGISTERED;}
+                else if(!(result.getDouble("score") == score))
+                {
+                    return Constants.SCORE_CHANGED;
+                }
+                else
+                    return Constants.NO_CHANGE;
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return Constants.ERROR;
+    }
+
+    public Double getNewScore(String name, Double score)
+    {
+        String url ="jdbc:sqlite:"+Constants.SQLPATH;
+        try (Connection conn = DriverManager.getConnection(url)) {
+            if (conn != null) {
+                String tableselect = "SELECT * FROM Features WHERE FeatureID = '"+name+"';";
+                Statement stmt = conn.createStatement();
+                ResultSet result = stmt.executeQuery(tableselect);
+                Double diff = score - result.getDouble("score");
+                return diff;
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return null;
     }
 
    public void createDB()
@@ -31,7 +107,7 @@ public class SqlOp {
        String url ="jdbc:sqlite:"+Constants.SQLPATH;
        try (Connection conn = DriverManager.getConnection(url)) {
            if (conn != null) {
-               String tablecreation = "CREATE TABLE IF NOT EXISTS grids (\n"
+               String gridTablecreation = "CREATE TABLE IF NOT EXISTS grids (\n"
                        + "	Grid_ID text PRIMARY KEY,\n"
                        + "	beat_name text NOT NULL,\n"
                        + "	N1 text,\n"
@@ -42,17 +118,62 @@ public class SqlOp {
                        + "  N6 text,\n"
                        + "  N7 text,\n"
                        + "  N8 text,\n"
-                       + "  score real  DEFAULT NULL"
+                       + "  score real  DEFAULT 0,"
+                       + "  latitude real,"
+                       + "  longitude real"
                        + ");";
 
                Statement stmt = conn.createStatement();
-               stmt.execute(tablecreation);
+               stmt.execute(gridTablecreation);
+
+               String featuresTablecreation = "CREATE TABLE IF NOT EXISTS Features (\n"
+                       + "	FeatureID text PRIMARY KEY,\n"
+                       + "  score real  DEFAULT 0,"
+                       + "  deleted INTEGER DEFAULT 0,"
+                       + "  type VARCHAR"
+                       + ");";
+
+               stmt.execute(featuresTablecreation);
            }
 
        } catch (SQLException e) {
            System.out.println(e.getMessage());
        }
    }
+
+    public Double getLatitude(String featureId)
+    {
+        Double lati = null;
+        String url ="jdbc:sqlite:"+Constants.SQLPATH;
+        try (Connection conn = DriverManager.getConnection(url)) {
+            if (conn != null) {
+                String tableselect = "SELECT latitude FROM grids WHERE Grid_ID = '"+featureId+"' ;";
+                Statement stmt = conn.createStatement();
+                ResultSet result = stmt.executeQuery(tableselect);
+                lati = result.getDouble("latitude");
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return lati;
+    }
+
+    public Double getLongitude(String featureId)
+    {
+        Double longi = null;
+        String url ="jdbc:sqlite:"+Constants.SQLPATH;
+        try (Connection conn = DriverManager.getConnection(url)) {
+            if (conn != null) {
+                String tableselect = "SELECT longitude FROM grids WHERE Grid_ID = '"+featureId+"' ;";
+                Statement stmt = conn.createStatement();
+                ResultSet result = stmt.executeQuery(tableselect);
+                longi = result.getDouble("longitude");
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return longi;
+    }
 
    public void selectAll()
    {
@@ -73,7 +194,9 @@ public class SqlOp {
                            result.getString("N6")+" "+
                            result.getString("N7")+" "+
                            result.getString("N8")+" "+
-                           result.getFloat("score")
+                           result.getFloat("score")+" "+
+                           result.getDouble("latitude")+" "+
+                           result.getDouble("longitude")
                    );
                }
 
@@ -83,6 +206,7 @@ public class SqlOp {
            System.out.println(e.getMessage());
        }
    }
+
 
    public HashMap<String,GridFeature> findFeatures(ArrayList<String> Ids)
    {
@@ -133,7 +257,7 @@ public class SqlOp {
        try (Connection conn = DriverManager.getConnection(url)) {
            if (conn != null) {
                conn.setAutoCommit(false);
-               String tableInsert = "INSERT OR IGNORE INTO grids(Grid_ID,beat_name,N1,N2,N3,N4,N5,N6,N7,N8) values(?,?,?,?,?,?,?,?,?,?);";
+               String tableInsert = "INSERT OR IGNORE INTO grids(Grid_ID,beat_name,N1,N2,N3,N4,N5,N6,N7,N8,latitude,longitude) values(?,?,?,?,?,?,?,?,?,?,?,?);";
                PreparedStatement pstmt = conn.prepareStatement(tableInsert);
 
                for (ArrayList<String> gridList :list) {
@@ -148,6 +272,8 @@ public class SqlOp {
                    pstmt.setString(8,gridList.get(6));
                    pstmt.setString(9,gridList.get(7));
                    pstmt.setString(10,gridList.get(8));
+                   pstmt.setDouble(11,Double.valueOf(gridList.get(9)));
+                   pstmt.setDouble(12,Double.valueOf(gridList.get(10)));
                    pstmt.addBatch();
 //                   pstmt.clearParameters();
                }
@@ -165,27 +291,302 @@ public class SqlOp {
        }
    }
 
-   public void countQuery()
+   public void updateScore(HashMap<FeatureId,Double> set)
    {
        String url ="jdbc:sqlite:"+Constants.SQLPATH;
        try (Connection conn = DriverManager.getConnection(url)) {
            if (conn != null) {
-               String tableselect = "SELECT count(Grid_ID) FROM grids;";
-               Statement stmt = conn.createStatement();
-               ResultSet result = stmt.executeQuery(tableselect);
-               while (result.next())
+               conn.setAutoCommit(false);
+               String scoreUpdate = "UPDATE grids SET score = score + ? WHERE Grid_ID = ? ;";
+               PreparedStatement pstmt = conn.prepareStatement(scoreUpdate);
+
+               for(Map.Entry<FeatureId,Double> entry : set.entrySet())
                {
-                   System.out.println(result.getInt("count(Grid_ID)"));
+                    pstmt.setDouble(1,entry.getValue());
+                    pstmt.setString(2,entry.getKey().getID());
+                    pstmt.addBatch();
                }
+
+               pstmt.executeBatch();
+               conn.commit();
            }
        } catch (SQLException e) {
            System.out.println(e.getMessage());
        }
    }
 
+   public Double getScore(String featureId)
+   {
+       String url ="jdbc:sqlite:"+Constants.SQLPATH;
+       try (Connection conn = DriverManager.getConnection(url)) {
+           if (conn != null) {
+               String select = "SELECT score FROM grids WHERE Grid_ID = '"+featureId +"';";
+               Statement stmt = conn.createStatement();
+               ResultSet result = stmt.executeQuery(select);
+               return result.getDouble("score");
+           }
+       } catch (SQLException e) {
+           System.out.println(e.getMessage());
+       }
+       return null;
+   }
+
+   public void updateFeatures(HashMap<String,Double> hashMap,String layerType)
+   {
+       String url ="jdbc:sqlite:"+Constants.SQLPATH;
+       try (Connection conn = DriverManager.getConnection(url)) {
+           if (conn != null) {
+               conn.setAutoCommit(false);
+               String featureUpdate = "INSERT OR REPLACE into Features(FeatureID,score,type) VALUES (?,?,?);";
+               PreparedStatement pstmt = conn.prepareStatement(featureUpdate);
+
+               for(Map.Entry<String,Double> entry : hashMap.entrySet())
+               {
+                   pstmt.setString(1,entry.getKey());
+                   pstmt.setDouble(2,entry.getValue());
+                   pstmt.setString(3,layerType);
+                   pstmt.addBatch();
+               }
+
+               pstmt.executeBatch();
+               conn.commit();
+           }
+       } catch (SQLException e) {
+           System.out.println(e.getMessage());
+       }
+   }
+
+    public void TestUpdate()
+    {
+        String url ="jdbc:sqlite:"+Constants.SQLPATH;
+        try (Connection conn = DriverManager.getConnection(url)) {
+            if (conn != null) {
+                conn.setAutoCommit(false);
+                String scoreUpdate = "UPDATE grids SET score = score + ? WHERE Grid_ID = ?;";
+                PreparedStatement pstmt = conn.prepareStatement(scoreUpdate);
+
+                pstmt.setDouble(1,0.0);
+                pstmt.setString(2,"kanhaTr1haGrid.120058");
+                pstmt.addBatch();
+
+                pstmt.executeBatch();
+                conn.commit();
+                System.out.println("updated");
+
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public ArrayList<Double> getSortedScores()
+    {
+        ArrayList<Double> list = new ArrayList<>();
+        String url ="jdbc:sqlite:"+Constants.SQLPATH;
+        try (Connection conn = DriverManager.getConnection(url)) {
+            if (conn != null) {
+                String tableselect = "SELECT DISTINCT score FROM grids ORDER BY score DESC;";
+                Statement stmt = conn.createStatement();
+                ResultSet result = stmt.executeQuery(tableselect);
+                while (result.next())
+                {
+                    list.add(result.getDouble("score"));
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return list;
+    }
+
+    public ArrayList<String> getGridsFromScore(Double score)
+    {
+        ArrayList<String> list = new ArrayList<>();
+        String url ="jdbc:sqlite:"+Constants.SQLPATH;
+        try (Connection conn = DriverManager.getConnection(url)) {
+            if (conn != null) {
+                String tableselect = "SELECT Grid_ID FROM grids WHERE score = "+score+" ;";
+                Statement stmt = conn.createStatement();
+                ResultSet result = stmt.executeQuery(tableselect);
+                while (result.next())
+                {
+                    list.add(result.getString("Grid_ID"));
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return list;
+    }
+
+    public ArrayList<String> getGridsFromScore(Double score,String beatName)
+    {
+        ArrayList<String> list = new ArrayList<>();
+        String url ="jdbc:sqlite:"+Constants.SQLPATH;
+        try (Connection conn = DriverManager.getConnection(url)) {
+            if (conn != null) {
+                String tableselect = "SELECT Grid_ID FROM grids WHERE score = "+score+" AND beat_name = '"+beatName+"' ;";
+                Statement stmt = conn.createStatement();
+                ResultSet result = stmt.executeQuery(tableselect);
+                while (result.next())
+                {
+                    list.add(result.getString("Grid_ID"));
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return list;
+    }
+
+    public String getParentBeat(String featureId)
+    {
+        String url ="jdbc:sqlite:"+Constants.SQLPATH;
+        try (Connection conn = DriverManager.getConnection(url)) {
+            if (conn != null) {
+                String tableselect = "SELECT beat_name FROM grids WHERE Grid_Id = '"+featureId+"' ;";
+                Statement stmt = conn.createStatement();
+                ResultSet result = stmt.executeQuery(tableselect);
+                return result.getString("beat_name");
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return null;
+    }
+
+    public Set<String> getDeletedFeatures() {
+
+        Set<String> set = new HashSet<>();
+        String url ="jdbc:sqlite:"+Constants.SQLPATH;
+        try (Connection conn = DriverManager.getConnection(url)) {
+            if (conn != null) {
+                String tableselect = "SELECT FeatureID FROM Features WHERE deleted = 1 ;";
+                Statement stmt = conn.createStatement();
+                ResultSet result = stmt.executeQuery(tableselect);
+                while (result.next())
+                {
+                    set.add(result.getString("FeatureID"));
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return set;
+    }
+
+    public void removeDeletedFeatures(Set<String> set)
+    {
+        if (set.isEmpty())
+        {
+            return;
+        }
+        String url ="jdbc:sqlite:"+Constants.SQLPATH;
+        try (Connection conn = DriverManager.getConnection(url)) {
+            if (conn != null) {
+                conn.setAutoCommit(false);
+                String featureDelete = "DELETE FROM Features WHERE FeatureID = ? ;";
+                PreparedStatement pstmt = conn.prepareStatement(featureDelete);
+
+                for(String entry : set)
+                {
+                    pstmt.setString(1,entry);
+                    pstmt.addBatch();
+                }
+
+                pstmt.executeBatch();
+                conn.commit();
+
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public ArrayList<String> getTypes()
+    {
+        ArrayList<String> list = new ArrayList<>();
+
+        String url ="jdbc:sqlite:"+Constants.SQLPATH;
+        try (Connection conn = DriverManager.getConnection(url)) {
+            if (conn != null) {
+                String tableselect = "SELECT DISTINCT type FROM Features;";
+                Statement stmt = conn.createStatement();
+                ResultSet result = stmt.executeQuery(tableselect);
+
+                while (result.next())
+                {
+                    list.add(result.getString("type"));
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return list;
+    }
+
+    public ArrayList<String> getFeaturesFromType(String type)
+    {
+        ArrayList<String> list = new ArrayList<>();
+
+        String url ="jdbc:sqlite:"+Constants.SQLPATH;
+        try (Connection conn = DriverManager.getConnection(url)) {
+            if (conn != null) {
+                String tableselect = "SELECT FeatureID FROM Features WHERE type = '"+type+"';";
+                Statement stmt = conn.createStatement();
+                ResultSet result = stmt.executeQuery(tableselect);
+
+                while (result.next())
+                {
+                    list.add(result.getString("FeatureID"));
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return list;
+    }
+
+    public void countQuery()
+    {
+        String url ="jdbc:sqlite:"+Constants.SQLPATH;
+        try (Connection conn = DriverManager.getConnection(url)) {
+            if (conn != null) {
+                String tableselect = "SELECT * FROM Features;";
+                Statement stmt = conn.createStatement();
+                ResultSet result = stmt.executeQuery(tableselect);
+
+
+//                ResultSetMetaData rm = result.getMetaData();
+//                String sArray[] = new String[rm.getColumnCount()];
+//                for (int ctr = 1; ctr <= sArray.length; ctr++) {
+//                    String s = rm.getColumnName(ctr);
+//                    sArray[ctr - 1] = s;
+//                }
+
+//               DatabaseMetaData meta = conn.getMetaData();
+//               ResultSet result = meta.getSchemas();
+
+                while (result.next())
+                {
+                    System.out.println(result.getString(1)+"  "+result.getString(2)+"  "+result.getString(3)+"  "+result.getString(4));
+//                    System.out.println(result.getInt("count(*)"));
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+
     public static void main(String args[])
     {
         SqlOp sqlOp = new SqlOp();
+//        sqlOp.countQuery();
+//        ArrayList<Double> list= sqlOp.getSortedScores();
+//        for (Double score : list)
+//        {System.out.println(score);}
         sqlOp.selectAll();
     }
+
 }

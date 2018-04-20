@@ -35,6 +35,10 @@ public class Application
         view.typeDialog.pack();
         view.askPathView.pack();
         view.scoresView.pack();
+        view.scoresView.setLocationRelativeTo(null);
+        view.removeDialog.pack();
+        view.removeDialog.splitPane.setDividerLocation(view.removeDialog.mapPane.getWidth()*30/100);
+        view.removeDialog.setLocationRelativeTo(null);
         launchApp();
 
     }

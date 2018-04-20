@@ -24,6 +24,7 @@ public class ScoresView extends JDialog {
            JPanel temp = new JPanel(new FlowLayout(FlowLayout.LEFT,20,10));
            temp.add(new JLabel(value));
            JTextField tempField = new JTextField("Nil",3);
+           tempField.setEnabled(false);
            textFields.put(value,tempField);
            temp.add(tempField);
            this.add(temp);
@@ -36,6 +37,7 @@ public class ScoresView extends JDialog {
     {
         for(Map.Entry m : hashMap.entrySet())
         {
+            textFields.get(m.getKey()).setEnabled(true);
             if(!m.getValue().equals("Nil"))
             {textFields.get(m.getKey()).setText((String) m.getValue());}
         }

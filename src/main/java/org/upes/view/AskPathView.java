@@ -11,7 +11,7 @@ public class AskPathView extends JDialog
     public JLabel latitudeLabelStart = new JLabel(Constants.START_LATITUDE_LABEL, JLabel.TRAILING);
     public JTextField longitudeStart = new JTextField();
     public JLabel longitudeLabelStart = new JLabel(Constants.START_LONGITUDE_LABEL, JLabel.TRAILING);
-    public JTextField distance = new JTextField(Constants.DEFAULT_VALUE_DISTANCE_PATH);
+    public JComboBox distance = new JComboBox(Constants.Distances);
     public JLabel  distanceLabel = new JLabel(Constants.DISTANCE_LABEL, JLabel.TRAILING);
     public JLabel description = new JLabel(Constants.DESCRIPTION_ASK_DIALOG, JLabel.TRAILING);
     public JButton okButton = new JButton();
@@ -39,11 +39,14 @@ public class AskPathView extends JDialog
         lowestPane.add(okButton);
         this.add(lowestPane);
 
-        JLabel[] labels = {distanceLabel, latitudeLabelStart, longitudeLabelStart ,latitudeLabelEnd ,longitudeLabelEnd };
-        JTextField[] fields = {distance, latitudeStart, longitudeStart, latitudeEnd, longitudeEnd };
+        JLabel[] labels = {latitudeLabelStart, longitudeLabelStart ,latitudeLabelEnd ,longitudeLabelEnd };
+        JTextField[] fields = {latitudeStart, longitudeStart, latitudeEnd, longitudeEnd };
 
         int numPairs = labels.length;
 
+        midPane.add(distanceLabel);
+        distanceLabel.setLabelFor(distance);
+        midPane.add(distance);
         //Create and populate the panel.
         for (int i = 0; i < numPairs; i++)
         {

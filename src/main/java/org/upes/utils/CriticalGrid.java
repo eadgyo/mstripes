@@ -5,6 +5,7 @@ import org.upes.model.RuleEntry;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Collection;
 
 public class CriticalGrid
 {
@@ -28,4 +29,19 @@ public class CriticalGrid
         rules.add(StyleUtils.createRule(LOWEST, geomAttribute));
         return rules;
     }
+
+    public static ArrayList<Rule> createRuleEntries(int num,String geomAttribute)
+    {
+        ArrayList<Rule> rules = new ArrayList<>();
+        int diff = 255/num;
+        for (int i=0; i<num; i++)
+        {
+            int green = (255-i*diff)>0?(255-i*diff):0;
+            Color color = new Color(255,green,10);
+            RuleEntry ruleEntry = new RuleEntry(Color.BLACK,color,1.0);
+            rules.add(StyleUtils.createRule(ruleEntry,geomAttribute));
+        }
+        return rules;
+    }
+
 }

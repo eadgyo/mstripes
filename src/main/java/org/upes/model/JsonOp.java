@@ -43,6 +43,10 @@ public class JsonOp {
         return GRID_NAME;
     }
 
+    public HashMap<String, String> getIndiScores() {
+        return IndiScores;
+    }
+
     public boolean ifCreated()
     {
         File f = new File(Constants.JSONPATH);
@@ -97,7 +101,7 @@ public class JsonOp {
 
     public boolean isCalcRequired(org.geotools.map.Layer layer)
     {
-        if(IndiScores.get(layer.getTitle()).equals("Nil") || IndiScores.get(layer.getTitle()).equals("0.0"))
+        if(IndiScores.get(layer.getTitle()).equals("Nil"))
             return false;
         else
             return true;
@@ -137,13 +141,26 @@ public class JsonOp {
         shpFileType.setTypeName(type);
         shpFileType.setFiles(shpFile);
 
+        if(type.equals("Beats"))
+        {
+            String fileName = extractFileName(file.getName());
+            setBEAT_NAME(fileName);
+        }
+        else if(type.equals("Grid"))
+        {
+            String fileName = extractFileName(file.getName());
+            setGRID_NAME(fileName);
+        }
+        IndiScores.put(extractFileName(file.getName()),"Nil");
+
+
         JSONObject jshpFile = new JSONObject();
         jshpFile.put("FileType",shpFile[0].getFiletype());
         jshpFile.put("FilePath",shpFile[0].getFilepath());
 
         JSONObject jshpFileType = new JSONObject();
         jshpFileType.put("Type",shpFileType.getTypeName());
-        jshpFileType.put("Score",0.0);
+        jshpFileType.put("Score","Nil");
         JSONArray files = new JSONArray();
 
         files.add(jshpFile);
@@ -151,6 +168,8 @@ public class JsonOp {
 
         if(ifCreated()==false)
         {
+            File f = new File(Constants.JSONPATH);
+            boolean a = f.getParentFile().mkdirs();
             JSONObject jsonObject = new JSONObject();
 
             JSONArray jsonArray = new JSONArray();
@@ -193,8 +212,6 @@ public class JsonOp {
                 JSONObject tempfile=(JSONObject) f;
                 if(tempfile.get("FilePath").equals(file.toString()))
                 {
-                    shpfile = tempfile;
-                    System.out.println("There");
                     JOptionPane.showMessageDialog(null,"File already registered!","Error",JOptionPane.INFORMATION_MESSAGE);
                     return false;
                 }
@@ -221,6 +238,7 @@ public class JsonOp {
         try {
             JSONObject jsonObject =(JSONObject) parser.parse(new FileReader(Constants.JSONPATH));
             JSONArray list = (JSONArray) jsonObject.get("List");
+            IndiScores.clear();
             for(Object type : list)
             {
                 JSONObject ftype = (JSONObject) type;
@@ -324,6 +342,34 @@ public class JsonOp {
         return type;
     }
 
+    public ArrayList<String> getFilesFromType(String type)
+    {
+        ArrayList<String> output = new ArrayList<>();
 
+        org.json.simple.parser.JSONParser parser =new org.json.simple.parser.JSONParser();
+        try {
+            JSONObject jsonObject =(JSONObject) parser.parse(new FileReader(Constants.JSONPATH));
+            JSONArray list = (JSONArray) jsonObject.get("List");
+            for(Object item : list)
+            {
+                JSONObject ftype = (JSONObject) item;
+                if(ftype.get("Type").equals(type))
+                {
+                    JSONArray files = (JSONArray) ftype.get("Files");
+
+                    for(Object file : files)
+                    {
+                        JSONObject shpfile = (JSONObject) file;
+                        output.add((String) shpfile.get("FilePath"));
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return output;
+    }
 
 }

@@ -21,6 +21,7 @@ public class View extends JFrame
     public TypeDialog typeDialog = new TypeDialog(this);
     public AskPathView askPathView = new AskPathView(this);
     public ScoresView scoresView = new ScoresView(this);
+    public RemoveDialog removeDialog = new RemoveDialog(this);
 
     public View()
     {
